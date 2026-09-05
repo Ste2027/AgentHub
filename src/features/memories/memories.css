@@ -160,6 +160,12 @@
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
+.context-editor textarea {
+  min-height: 0;
+}
+.context-metadata {
+  overflow-wrap: anywhere;
+}
 .memory-editor fieldset {
   display: flex;
   flex-wrap: wrap;

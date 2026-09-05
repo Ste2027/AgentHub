@@ -262,13 +262,15 @@ export function App() {
         <button className="search-trigger" onClick={() => setSearchOpen(true)}>
           <SearchIcon size={15} />
           <span>Search anything</span>
-          <kbd>⌘ K</kbd>
+          <kbd>{/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘ K" : "Ctrl K"}</kbd>
         </button>
         <div className="nav-label">WORKSPACE</div>
         <nav>
           {pages.map((p) => (
             <button
               key={p.id}
+              title={p.label}
+              aria-current={page === p.id ? "page" : undefined}
               className={page === p.id ? "active" : ""}
               onClick={() => navigate(p.id)}
             >

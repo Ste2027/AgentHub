@@ -106,12 +106,13 @@ export function Settings({
         <h2>Your data stays yours.</h2>
         <p>
           AgentHub reads local transcripts and keeps a searchable SQLite index
-          on this device. No accounts, telemetry, cloud requests or AI service
-          calls.
+          on this device. No accounts, telemetry or AI service calls.
+          Marketplace contacts public GitHub repositories only when you request it.
         </p>
         <p>
-          Original agent files are never modified. Tool commands in transcripts
-          are displayed as text and never executed.
+          Original transcripts are never modified. Skill and MCP changes require
+          your explicit action. Tool commands in transcripts are displayed as text
+          and never executed.
         </p>
         <h3>Local storage</h3>
         <code>{databasePath || "Available in the desktop app"}</code>
