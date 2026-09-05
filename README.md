@@ -143,7 +143,7 @@ cargo fmt --manifest-path src-tauri/Cargo.toml --check
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --features desktop --locked -- -D warnings
 ```
 
-The GitHub Actions workflow runs these checks and a Windows desktop build. No private transcripts are included in tests or screenshots. See [local verification record](docs/verification.md) for what was actually run during development. For the memory workflow, see [using memories](docs/memories.md).
+The GitHub Actions workflow runs these checks and a Windows desktop build. No private transcripts are included in tests or screenshots. See [local verification record](docs/verification.md) for what was actually run during development. For the memory workflow, see [using memories](docs/memories.md). The [name check](docs/name-collision.md) records the public collision review.
 
 ## Current limits
 
