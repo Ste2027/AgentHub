@@ -2,7 +2,7 @@
 
 Development platform: Windows x64, Node 24.16.0, Rust 1.94.1, SQLite bundled through rusqlite. Dependency resolutions are recorded in both lockfiles.
 
-Current result: **27 Rust integration tests and 16 frontend tests passed** on Windows; typecheck, ESLint, rustfmt and Clippy passed. Search-result navigation is tested for sessions outside the currently loaded page. Windows-only path tests reject UNC and device namespaces before filesystem probing.
+Current result: **28 Rust integration tests and 16 frontend tests passed** on Windows; typecheck, ESLint, rustfmt and Clippy passed. Search-result navigation is tested for sessions outside the currently loaded page. Windows-only path tests reject UNC and device namespaces before filesystem probing.
 
 Checks performed during development:
 
@@ -10,6 +10,7 @@ Checks performed during development:
 - React behavior tests for the browser empty state, disabled local operations, accessible search shortcut, desktop session rendering, safe transcript text, indexing progress and settings IPC calls. Desktop IPC is mocked in these tests; they are not native end-to-end tests.
 - Rust integration tests for both adapters, malformed and oversized records, duplicate handling, idempotence, transaction rollback, literal full-text queries, filters, settings persistence, schema reopen and incremental indexing recovery.
 - Rust tests for memory revisions, trash/restore, atomic archives, context extraction, truthful analytics and read-only skills/MCP discovery.
+- Synthetic scale test for 10,000 sessions and 100,000 events: in-memory import completed in 0.83s and bounded FTS search in 0.19s on the development machine.
 - Frontend tests for memory editing, conflict preservation, archive export, context handoff and empty activity states.
 - Rust formatting and Clippy with warnings denied, including the Tauri desktop feature.
 - Tauri Windows build with embedded frontend assets using `--debug --no-bundle`.
