@@ -20,54 +20,132 @@ pub fn adapter(id: &str) -> Option<Box<dyn AgentAdapter>> {
 }
 pub fn agents(settings: &Settings) -> Vec<Agent> {
     let home = dirs::home_dir().unwrap_or_default();
-    [
+    let codex_root = std::env::var_os("CODEX_HOME")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| home.join(".codex"));
+    let copilot_root = std::env::var_os("COPILOT_HOME")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| home.join(".copilot"));
+    let opencode_root = std::env::var_os("OPENCODE_CONFIG_DIR")
+        .map(std::path::PathBuf::from)
+        .or_else(|| {
+            std::env::var_os("XDG_CONFIG_HOME")
+                .map(std::path::PathBuf::from)
+                .map(|path| path.join("opencode"))
+        })
+        .unwrap_or_else(|| home.join(".config/opencode"));
+    let definitions = [
         (
             "claude",
             "Claude Code",
-            ".claude/projects",
-            &settings.claude_path,
+            home.join(".claude"),
+            vec!["claude"],
             true,
+        ),
+        ("codex", "OpenAI Codex", codex_root, vec!["codex"], true),
+        (
+            "cursor",
+            "Cursor",
+            home.join(".cursor"),
+            vec!["cursor", "cursor-agent"],
+            false,
         ),
         (
-            "codex",
-            "OpenAI Codex",
-            ".codex/sessions",
-            &settings.codex_path,
-            true,
+            "gemini",
+            "Gemini CLI",
+            home.join(".gemini"),
+            vec!["gemini"],
+            false,
         ),
-        ("cursor", "Cursor", "", &String::new(), false),
-        ("gemini", "Gemini CLI", "", &String::new(), false),
-        ("opencode", "OpenCode", "", &String::new(), false),
-        ("copilot", "GitHub Copilot", "", &String::new(), false),
-    ]
-    .iter()
-    .map(|(id, name, default, custom, supported)| {
-        let path = if !supported {
-            String::new()
-        } else if custom.is_empty() {
-            if *id == "codex" {
-                std::env::var_os("CODEX_HOME")
-                    .map(|p| std::path::PathBuf::from(p).join("sessions"))
-                    .unwrap_or_else(|| home.join(default))
-                    .to_string_lossy()
-                    .into_owned()
+        (
+            "opencode",
+            "OpenCode",
+            opencode_root,
+            vec!["opencode"],
+            false,
+        ),
+        (
+            "copilot",
+            "GitHub Copilot",
+            copilot_root,
+            vec!["copilot"],
+            false,
+        ),
+    ];
+    definitions
+        .into_iter()
+        .map(|(id, name, config_root, commands, supported)| {
+            let custom = match id {
+                "claude" => settings.claude_path.as_str(),
+                "codex" => settings.codex_path.as_str(),
+                _ => "",
+            };
+            let session_path = if !custom.is_empty() {
+                std::path::PathBuf::from(custom)
+            } else if id == "claude" {
+                config_root.join("projects")
+            } else if id == "codex" {
+                config_root.join("sessions")
             } else {
-                home.join(default).to_string_lossy().into_owned()
+                std::path::PathBuf::new()
+            };
+            let installation_detected = command_exists(&commands);
+            let config_detected =
+                crate::paths::is_local_absolute(&config_root) && config_root.is_dir();
+            let sessions_detected = supported
+                && crate::paths::is_local_absolute(&session_path)
+                && session_path.is_dir();
+            Agent {
+                id: id.into(),
+                name: name.into(),
+                supported,
+                detected: installation_detected || config_detected || sessions_detected,
+                installation_detected,
+                config_detected,
+                sessions_detected,
+                adapter_status: if supported {
+                    "Supported"
+                } else {
+                    "Detection only"
+                }
+                .into(),
+                config_path: config_root.to_string_lossy().into_owned(),
+                path: session_path.to_string_lossy().into_owned(),
             }
-        } else {
-            (*custom).clone()
-        };
-        Agent {
-            id: id.to_string(),
-            name: name.to_string(),
-            supported: *supported,
-            detected: *supported
-                && crate::paths::is_local_absolute(Path::new(&path))
-                && Path::new(&path).is_dir(),
-            path,
-        }
-    })
-    .collect()
+        })
+        .collect()
+}
+
+fn command_exists(names: &[&str]) -> bool {
+    let Some(path) = std::env::var_os("PATH") else {
+        return false;
+    };
+    #[cfg(windows)]
+    let extensions = std::env::var_os("PATHEXT")
+        .map(|value| {
+            value
+                .to_string_lossy()
+                .split(';')
+                .map(str::to_ascii_lowercase)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_else(|| vec![".exe".into(), ".cmd".into(), ".bat".into()]);
+    std::env::split_paths(&path)
+        .filter(|directory| crate::paths::is_local_absolute(directory))
+        .any(|directory| {
+            names.iter().any(|name| {
+                #[cfg(windows)]
+                {
+                    extensions
+                        .iter()
+                        .any(|extension| directory.join(format!("{name}{extension}")).is_file())
+                }
+                #[cfg(not(windows))]
+                {
+                    directory.join(name).is_file()
+                }
+            })
+        })
 }
 pub fn string(v: &Value, key: &str) -> String {
     v.get(key)
@@ -196,4 +274,21 @@ pub fn records(reader: &mut dyn BufRead, mut consume: impl FnMut(Value)) -> Resu
         }
     }
     Ok(warnings)
+}
+
+#[cfg(test)]
+mod agent_detection_tests {
+    use super::*;
+
+    #[test]
+    fn reports_all_agents_without_claiming_unimplemented_adapters() {
+        let found = agents(&Settings::default());
+        assert_eq!(found.len(), 6);
+        assert_eq!(found.iter().filter(|agent| agent.supported).count(), 2);
+        for id in ["cursor", "gemini", "opencode", "copilot"] {
+            let agent = found.iter().find(|agent| agent.id == id).unwrap();
+            assert_eq!(agent.adapter_status, "Detection only");
+            assert!(!agent.sessions_detected);
+        }
+    }
 }

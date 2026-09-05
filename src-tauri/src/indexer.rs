@@ -22,7 +22,7 @@ pub fn run(
         .into_iter()
         .filter(|a| a.supported)
     {
-        if !agent.detected {
+        if !agent.sessions_detected {
             continue;
         }
         let adapter = adapters::adapter(&agent.id).ok_or("Unsupported adapter")?;

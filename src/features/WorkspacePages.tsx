@@ -433,13 +433,35 @@ export function AgentsPage({
       <section className="panel agent-panel">
         <h2>Supported adapters</h2>
         <p className="muted">
-          Detection means a local session directory exists. No agent is started
-          or contacted.
+          AgentHub checks local executable, configuration and session locations
+          independently. No agent is started or contacted.
         </p>
         {(
-          overview?.agents.filter((a) => a.supported) ?? [
-            { id: "claude", name: "Claude Code", detected: false, path: "" },
-            { id: "codex", name: "OpenAI Codex", detected: false, path: "" },
+          overview?.agents ?? [
+            {
+              id: "claude",
+              name: "Claude Code",
+              detected: false,
+              supported: true,
+              path: "",
+              config_path: "",
+              installation_detected: false,
+              config_detected: false,
+              sessions_detected: false,
+              adapter_status: "Supported",
+            },
+            {
+              id: "codex",
+              name: "OpenAI Codex",
+              detected: false,
+              supported: true,
+              path: "",
+              config_path: "",
+              installation_detected: false,
+              config_detected: false,
+              sessions_detected: false,
+              adapter_status: "Supported",
+            },
           ]
         ).map((a) => (
           <div key={a.id} className="agent-card">
@@ -448,7 +470,16 @@ export function AgentsPage({
             </span>
             <div>
               <h3>{a.name}</h3>
-              <code>{a.path || "Path available in desktop app"}</code>
+              <p className="muted">
+                {a.installation_detected
+                  ? "Executable found"
+                  : "Executable not found"}{" "}
+                · {a.config_detected ? "config found" : "config not found"} ·{" "}
+                {a.sessions_detected
+                  ? "sessions found"
+                  : "sessions not indexed"}
+              </p>
+              <code>{a.path || a.config_path || "No local path found"}</code>
             </div>
             <span className={`badge ${a.detected ? "accent" : ""}`}>
               {desktop
@@ -457,21 +488,25 @@ export function AgentsPage({
                   : "Not found"
                 : "Desktop required"}
             </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("settings")}
-            >
-              Configure
-            </Button>
+            <span className="badge">{a.adapter_status}</span>
+            {a.supported && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("settings")}
+              >
+                Configure
+              </Button>
+            )}
           </div>
         ))}
       </section>
       <section className="panel roadmap-note">
-        <h3>Room for more agents</h3>
+        <h3>Six agents detected locally</h3>
         <p>
-          Cursor, Gemini CLI, OpenCode and GitHub Copilot are planned adapters.
-          They are not indexed in this release.
+          Claude Code and OpenAI Codex have verified session adapters. Cursor,
+          Gemini CLI, OpenCode and GitHub Copilot expose installation status
+          only until their session formats are implemented and tested.
         </p>
         <Button
           variant="outline"

@@ -3,6 +3,11 @@ export interface Agent {
   name: string;
   supported: boolean;
   detected: boolean;
+  installation_detected: boolean;
+  config_detected: boolean;
+  sessions_detected: boolean;
+  adapter_status: string;
+  config_path: string;
   path: string;
 }
 export interface Session {

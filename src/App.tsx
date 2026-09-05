@@ -327,7 +327,7 @@ export function App() {
           <div className="nav-label">ON THIS DEVICE</div>
           {overview ? (
             overview.agents
-              .filter((a) => a.supported)
+              .filter((a) => a.supported || a.detected)
               .map((a) => (
                 <button
                   className="agent-status"

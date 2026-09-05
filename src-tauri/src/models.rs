@@ -34,6 +34,11 @@ pub struct Agent {
     pub name: String,
     pub supported: bool,
     pub detected: bool,
+    pub installation_detected: bool,
+    pub config_detected: bool,
+    pub sessions_detected: bool,
+    pub adapter_status: String,
+    pub config_path: String,
     pub path: String,
 }
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
