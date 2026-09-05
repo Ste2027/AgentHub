@@ -11,6 +11,7 @@
     "test": "vitest run",
     "desktop": "tauri dev --features desktop",
     "desktop:build": "tauri build --features desktop",
+    "tauri": "tauri",
     "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml",
     "check": "npm run typecheck && npm run lint && npm test && npm run build"
   },
