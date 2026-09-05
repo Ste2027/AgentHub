@@ -116,6 +116,16 @@ pub async fn save_mcp_config(
         let _ = std::fs::remove_file(&tmp);
         return Err(e.to_string());
     }
+    // Verify the final file can still be parsed. If the filesystem accepted the
+    // replacement but the result is unreadable, restore the known-good backup.
+    let verified = std::fs::read_to_string(&p)
+        .ok()
+        .and_then(|saved| serde_json::from_str::<serde_json::Value>(&saved).ok())
+        .is_some();
+    if !verified {
+        let _ = std::fs::copy(&backup, &p);
+        return Err("MCP config verification failed; the previous file was restored".into());
+    }
     Ok(backup.to_string_lossy().into_owned())
 }
 

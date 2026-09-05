@@ -412,8 +412,14 @@ export function McpPage() {
                 <small>
                   {s.agent} · {s.scope} · {s.transport}
                   {s.args.length ? ` · ${s.args.length} args` : ""}
-                  {s.env_keys.length ? ` · ${s.env_keys.length} env keys` : ""}
                 </small>
+                {s.env_keys.length > 0 && (
+                  <div className="secret-list" aria-label="Masked environment variables">
+                    {s.env_keys.map((key) => (
+                      <code key={key}>{key} = ••••••••</code>
+                    ))}
+                  </div>
+                )}
                 <div className="compatibility-chips">
                   {["claude", "codex", "cursor", "gemini", "opencode"].map(
                     (a) => (
