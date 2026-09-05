@@ -35,6 +35,11 @@ export const api = {
     call<string>("save_skill", { path, text, expected }),
   restoreSkill: (path: string, backup: string) =>
     call<void>("restore_skill", { path, backup }),
+  copySkill: (path: string, destinationDir: string) =>
+    call<string>("copy_skill", { path, destinationDir }),
+  installSkill: (name: string, text: string, destinationDir: string) =>
+    call<string>("install_skill", { name, text, destinationDir }),
+  deleteSkill: (path: string) => call<string>("delete_skill", { path }),
   mcpServers: () => call<McpServer[]>("list_mcp_servers"),
   mcpConfig: (path: string) => call<McpFile>("read_mcp_config", { path }),
   saveMcpConfig: (path: string, text: string, expected: string) =>

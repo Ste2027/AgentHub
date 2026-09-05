@@ -6,7 +6,7 @@ Codex. Claude Code. One place to find the work you already did.
 
 Your coding agents store conversations, tool calls and project context in different directories. AgentHub brings that history into a private desktop workspace: browse sessions, inspect a command, find a decision, and follow a project across agents.
 
-**MVP / alpha · MIT · Tauri + Rust + React · No telemetry**
+**0.1.0 · MIT · Tauri + Rust + React · No telemetry**
 
 ![AgentHub empty workspace — actual browser preview](docs/screenshots/overview.png)
 
@@ -32,7 +32,7 @@ You remember solving the problem. You do not remember which agent, project or co
 | Marketplace      | Opt-in browsing of public GitHub skill repositories, source list, catalog search and remote SKILL.md review |
 | Privacy          | Read-only source access; a local SQLite index; no account, telemetry or inference API                       |
 
-There are no simulated charts, fabricated success rates or automatic agent commands. Skill edits and JSON MCP edits require an explicit confirmation, create a backup and use an atomic replacement with stale-file detection.
+There are no simulated charts, fabricated success rates or automatic agent commands. Skill edits, copies, installs and JSON MCP edits require an explicit confirmation, create a backup where applicable and use atomic replacement with stale-file detection.
 
 ## Supported agents
 
@@ -49,7 +49,7 @@ There are no simulated charts, fabricated success rates or automatic agent comma
 
 ## Installation
 
-Build from source. This repository does not claim a published, signed installer.
+Build from source, or download a Windows artifact from a tagged GitHub release when one is available. Release artifacts are unsigned until a maintainer configures platform signing.
 
 Requirements:
 
@@ -67,7 +67,7 @@ npm run desktop
 On first launch:
 
 1. Follow or skip the short onboarding panel.
-2. Open **Agents** to inspect detected directories.
+2. Open **Agents** to inspect detected directories and the dedicated **Skills**, **MCP** and **Marketplace** tabs.
 3. If necessary, set absolute paths in **Settings**. Point Claude Code at `projects` and Codex at `sessions`, not their configuration files.
 4. Choose **Index sessions**. Source files remain untouched.
 5. Browse **Sessions**, **Projects**, **Memories**, **Skills**, **MCP** or **Marketplace**, or use **Ctrl/Cmd + K** to search.
@@ -116,7 +116,7 @@ docs/            Design decisions and support limits
 
 The Rust core builds without Tauri, so parsing and database tests need no GUI. Blocking work runs outside the UI thread. The current MVP serializes database operations with a mutex; large scans can delay queries while progress events continue.
 
-The schema stores a session once and its ordered events once. Messages, commands and tool results share that event model instead of duplicating transcript text across multiple domain tables. A disposable FTS index supplies search. New domain tables for memories, skills and MCP will be added through migrations when those features ship.
+The schema stores a session once and its ordered events once. Messages, commands and tool results share that event model instead of duplicating transcript text across multiple domain tables. Memories use their own versioned table and FTS index; skills and MCP remain file-backed resources, so AgentHub can review and edit them without copying secrets into SQLite.
 
 See [architecture details](docs/architecture.md).
 
@@ -125,7 +125,7 @@ See [architecture details](docs/architecture.md).
 - No telemetry libraries, cloud backend, accounts, AI API calls or remote fonts.
 - Marketplace network access is opt-in and limited to public GitHub API/raw content after an explicit Browse or Inspect click. No GitHub token is used.
 - Transcript commands and HTML are inert text. They are never executed or rendered as active markup.
-- Agent files are opened read-only. AgentHub only writes its own SQLite database.
+- Agent transcripts are opened read-only. Explicit skill or MCP changes write the selected local file only after confirmation, with stale-file checks and adjacent backups.
 - The production webview has a restrictive content security policy and no shell/HTTP/filesystem plugins.
 - Source transcripts and the index can contain secrets. The index is **not encrypted**. Use OS account isolation and disk encryption.
 - Source deletion does not delete archived sessions from the index. Changing a configured directory does not remove old imports.
@@ -143,7 +143,7 @@ cargo fmt --manifest-path src-tauri/Cargo.toml --check
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --features desktop --locked -- -D warnings
 ```
 
-The GitHub Actions workflow runs these checks and a Windows desktop build. No private transcripts are included in tests or screenshots. See [local verification record](docs/verification.md) for what was actually run during development.
+The GitHub Actions workflow runs these checks and a Windows desktop build. No private transcripts are included in tests or screenshots. See [local verification record](docs/verification.md) for what was actually run during development. For the memory workflow, see [using memories](docs/memories.md).
 
 ## Current limits
 
@@ -159,7 +159,7 @@ The GitHub Actions workflow runs these checks and a Windows desktop build. No pr
 ## Roadmap
 
 - **Phase 1:** harden Claude/Codex format coverage, large-history responsiveness and native integration tests.
-- **Phase 2:** local memories, compatible skills and read-only MCP inspection (implemented); explicit change previews are next.
+- **Phase 2:** local memories, compatible skills and reviewable MCP inspection (implemented); explicit copy/install and change previews are available.
 - **Phase 3:** structured cross-agent context export (implemented) and additional verified provider adapters.
 - **Phase 4:** community adapter SDK; evaluate optional encrypted device sync independently of the local core.
 

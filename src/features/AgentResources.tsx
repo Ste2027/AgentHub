@@ -33,6 +33,13 @@ export function SkillsPage() {
       setError("Could not export this skill.");
     }
   }
+  async function reloadSkills() {
+    try {
+      setItems(await api.skills());
+    } catch {
+      setError("Could not refresh local skills.");
+    }
+  }
   if (!desktop)
     return (
       <div className="panel">
@@ -122,6 +129,40 @@ export function SkillsPage() {
                   }
                 >
                   Review
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const destination = window.prompt(
+                      "Absolute destination skills directory (for example ~/.agents/skills):",
+                    );
+                    if (!destination) return;
+                    if (!window.confirm(`Copy ${s.name} to ${destination}?`)) return;
+                    api
+                      .copySkill(s.path, destination)
+                      .then(() => reloadSkills())
+                      .catch((e) =>
+                        setError(e instanceof Error ? e.message : "Could not copy this skill."),
+                      );
+                  }}
+                >
+                  Copy to agent
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (!window.confirm(`Move ${s.name} to AgentHub trash?`)) return;
+                    api
+                      .deleteSkill(s.path)
+                      .then(() => reloadSkills())
+                      .catch((e) =>
+                        setError(e instanceof Error ? e.message : "Could not remove this skill."),
+                      );
+                  }}
+                >
+                  Remove
                 </Button>
                 <Button
                   variant="ghost"
@@ -424,7 +465,11 @@ export function MarketplacePage() {
     "browse" | "installed" | "updates" | "sources"
   >("browse");
   const [catalogQuery, setCatalogQuery] = useState("");
-  const [items, setItems] = useState<{ name: string; url: string }[]>([]);
+  const [items, setItems] = useState<{
+    name: string;
+    url: string;
+    apiUrl: string;
+  }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [readme, setReadme] = useState<{ name: string; text: string } | null>(
@@ -452,11 +497,12 @@ export function MarketplacePage() {
         type: string;
         name: string;
         html_url: string;
+        url: string;
       }[];
       setItems(
         data
           .filter((x) => x.type === "dir")
-          .map((x) => ({ name: x.name, url: x.html_url })),
+          .map((x) => ({ name: x.name, url: x.html_url, apiUrl: x.url })),
       );
       if (!sources.includes(source.trim())) {
         const next = [...sources, source.trim()];
@@ -599,11 +645,7 @@ export function MarketplacePage() {
                       size="sm"
                       onClick={async () => {
                         try {
-                          const raw = i.url.replace(
-                            "github.com",
-                            "api.github.com/repos",
-                          );
-                          const r = await fetch(raw + "/contents");
+                          const r = await fetch(i.apiUrl);
                           const entries = (await r.json()) as {
                             name: string;
                             download_url: string | null;
@@ -638,9 +680,35 @@ export function MarketplacePage() {
         <div className="resource-preview">
           <header>
             <h3>{readme.name}</h3>
-            <Button variant="ghost" size="sm" onClick={() => setReadme(null)}>
-              Close
-            </Button>
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const destination = window.prompt(
+                    "Absolute destination skills directory (for example ~/.agents/skills):",
+                  );
+                  if (!destination) return;
+                  if (
+                    !window.confirm(
+                      `Install the reviewed ${readme.name} skill into ${destination}?`,
+                    )
+                  )
+                    return;
+                  api
+                    .installSkill(readme.name, readme.text, destination)
+                    .then(() => setError("Skill installed. Reopen Skills to discover it."))
+                    .catch((e) =>
+                      setError(e instanceof Error ? e.message : "Could not install this skill."),
+                    );
+                }}
+              >
+                Install to…
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setReadme(null)}>
+                Close
+              </Button>
+            </div>
           </header>
           <p className="notice">
             Remote content is untrusted. Review instructions and scripts before
