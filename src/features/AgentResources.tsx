@@ -617,6 +617,7 @@ export function MarketplacePage() {
     "browse" | "installed" | "updates" | "sources"
   >("browse");
   const [catalogQuery, setCatalogQuery] = useState("");
+  const [installedSkills, setInstalledSkills] = useState<Skill[]>([]);
   const [items, setItems] = useState<{
     name: string;
     url: string;
@@ -633,6 +634,10 @@ export function MarketplacePage() {
     version: string;
     warnings: string[];
   } | null>(null);
+  useEffect(() => {
+    if (view !== "installed" && view !== "updates") return;
+    void api.skills().then(setInstalledSkills).catch(() => setInstalledSkills([]));
+  }, [view]);
   async function browse() {
     const match = source
       .trim()
@@ -763,10 +768,9 @@ export function MarketplacePage() {
             </p>
           )}
           {view === "updates" && (
-            <p className="muted">
-              Update checks are not available until a source package is
-              installed locally.
-            </p>
+            installedSkills.length ? (
+              <p className="muted">{installedSkills.length} installed skill{installedSkills.length === 1 ? "" : "s"} are ready for a source comparison. Version checks stay manual so no repository is contacted without your request.</p>
+            ) : <p className="muted">No installed skills yet. Install a reviewed package to track it here.</p>
           )}
           {view === "browse" && (
             <input
@@ -778,11 +782,16 @@ export function MarketplacePage() {
             />
           )}
           {view === "installed" && (
-            <p className="muted">
-              Installed skills are shown in the Skills tab. Marketplace
-              installation remains a deliberate copy operation with an explicit
-              destination.
-            </p>
+            installedSkills.length ? (
+              <div className="resource-list">
+                {installedSkills.map((skill) => (
+                  <article className="resource-row" key={`${skill.agent}:${skill.path}`}>
+                    <div><h3>{skill.name}</h3><small>{skill.agent} · {skill.scope} · {skill.path}</small></div>
+                    <span className="badge">Installed locally</span>
+                  </article>
+                ))}
+              </div>
+            ) : <p className="muted">No installed skills yet. Install a reviewed package to see it here.</p>
           )}
           {view === "browse" && items.length > 0 && (
             <div className="resource-list">
