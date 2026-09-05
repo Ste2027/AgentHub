@@ -5,12 +5,26 @@ import { Button } from "@/components/ui/button";
 import { Empty } from "@/components/Empty";
 import { saveText } from "@/lib/files";
 
+function diffText(before: string, after: string): string {
+  if (before === after) return "No changes.";
+  const oldLines = before.split(/\r?\n/);
+  const newLines = after.split(/\r?\n/);
+  const length = Math.max(oldLines.length, newLines.length);
+  return Array.from({ length }, (_, i) => {
+    const oldLine = oldLines[i];
+    const newLine = newLines[i];
+    if (oldLine === newLine) return `  ${oldLine ?? ""}`;
+    return `${oldLine === undefined ? "+" : "-"} ${oldLine ?? ""}\n${newLine === undefined ? "" : `+ ${newLine}`}`;
+  }).join("\n");
+}
+
 export function SkillsPage() {
   const [items, setItems] = useState<Skill[]>([]);
   const [open, setOpen] = useState<{
     name: string;
     path: string;
     text: string;
+    original: string;
     hash: string;
     editing: boolean;
     backup?: string;
@@ -77,6 +91,41 @@ export function SkillsPage() {
           <option value="claude">Claude Code</option>
           <option value="codex">OpenAI Codex</option>
         </select>
+        <Button
+          variant="outline"
+          onClick={async () => {
+            const source = window.prompt("Absolute path to an existing SKILL.md:");
+            const destination = source && window.prompt("Absolute destination skills directory:");
+            if (!source || !destination) return;
+            try {
+              const file = await api.skillContent(source);
+              const name = source.split(/[\\/]/).slice(-2, -1)[0] || "imported-skill";
+              if (!window.confirm(`Import ${name} into ${destination}? Only SKILL.md will be copied.`)) return;
+              await api.installSkill(name, file.text, destination);
+              await reloadSkills();
+            } catch (e) {
+              setError(e instanceof Error ? e.message : "Could not import this skill.");
+            }
+          }}
+        >
+          Import skill
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={async () => {
+            const backup = window.prompt("Absolute path to an AgentHub skill backup:");
+            const target = backup && window.prompt("Absolute path to the destination SKILL.md:");
+            if (!backup || !target || !window.confirm("Restore this skill backup?")) return;
+            try {
+              await api.restoreSkill(target, backup);
+              await reloadSkills();
+            } catch (e) {
+              setError(e instanceof Error ? e.message : "Could not restore this skill.");
+            }
+          }}
+        >
+          Restore backup
+        </Button>
       </div>
       {error && (
         <p role="alert" className="error">
@@ -121,6 +170,7 @@ export function SkillsPage() {
                           name: s.name,
                           path: s.path,
                           text: file.text,
+                          original: file.text,
                           hash: file.hash,
                           editing: false,
                         }),
@@ -207,7 +257,7 @@ export function SkillsPage() {
               />
               <details open>
                 <summary>Preview changes</summary>
-                <pre>{open.text}</pre>
+                <pre>{diffText(open.original, open.text)}</pre>
               </details>
               <Button
                 onClick={() => {
@@ -226,6 +276,7 @@ export function SkillsPage() {
                       setOpen({
                         ...open,
                         text: file.text,
+                        original: file.text,
                         hash: file.hash,
                         editing: false,
                         backup,
@@ -286,6 +337,7 @@ export function McpPage() {
   const [open, setOpen] = useState<{
     path: string;
     text: string;
+    original: string;
     hash: string;
     editing: boolean;
   } | null>(null);
@@ -323,6 +375,24 @@ export function McpPage() {
           </p>
         </div>
         <span className="badge">{items.length} discovered</span>
+        <Button
+          variant="outline"
+          onClick={async () => {
+            const path = window.prompt("Absolute JSON MCP config path to update:");
+            const name = path && window.prompt("New server name:");
+            const config = name && window.prompt('Server JSON, for example {"command":"npx","args":[]}');
+            if (!path || !name || !config || !window.confirm(`Add ${name} to this MCP config?`)) return;
+            try {
+              const file = await api.mcpConfig(path);
+              await api.addMcpServer(path, name, config, file.hash);
+              await reloadMcp();
+            } catch (e) {
+              setError(e instanceof Error ? e.message : "Could not add this server.");
+            }
+          }}
+        >
+          Add server
+        </Button>
       </div>
       {error && (
         <p role="alert" className="error">
@@ -364,6 +434,7 @@ export function McpPage() {
                       setOpen({
                         path: s.config_path,
                         text: f.text,
+                        original: f.text,
                         hash: f.hash,
                         editing: false,
                       }),
@@ -482,7 +553,7 @@ export function McpPage() {
               />
               <details open>
                 <summary>Preview changes</summary>
-                <pre>{open.text}</pre>
+                <pre>{diffText(open.original, open.text)}</pre>
               </details>
               <Button
                 onClick={() => {
@@ -499,6 +570,7 @@ export function McpPage() {
                       setOpen({
                         ...open,
                         text: f.text,
+                        original: f.text,
                         hash: f.hash,
                         editing: false,
                       }),
@@ -546,9 +618,15 @@ export function MarketplacePage() {
   }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [readme, setReadme] = useState<{ name: string; text: string } | null>(
-    null,
-  );
+  const [readme, setReadme] = useState<{
+    name: string;
+    text: string;
+    source: string;
+    files: string[];
+    description: string;
+    version: string;
+    warnings: string[];
+  } | null>(null);
   async function browse() {
     const match = source
       .trim()
@@ -722,6 +800,7 @@ export function MarketplacePage() {
                           const r = await fetch(i.apiUrl);
                           const entries = (await r.json()) as {
                             name: string;
+                            type: string;
                             download_url: string | null;
                           }[];
                           const skill = entries.find(
@@ -732,7 +811,30 @@ export function MarketplacePage() {
                               "This folder has no SKILL.md at its root.",
                             );
                           const t = await fetch(skill.download_url);
-                          setReadme({ name: i.name, text: await t.text() });
+                          const text = await t.text();
+                          const frontmatter = text.match(/^---\s*([\s\S]*?)\s*---/);
+                          const field = (key: string) =>
+                            frontmatter?.[1]
+                              ?.split(/\r?\n/)
+                              .find((line) => line.trim().toLowerCase().startsWith(`${key}:`))
+                              ?.split(":").slice(1).join(":").trim().replace(/^['"]|['"]$/g, "") || "Unknown";
+                          const names = entries.map((entry) => entry.name);
+                          const warnings: string[] = [];
+                          if (names.some((name) => /\.(sh|bash|ps1|bat|cmd|exe|py|js|ts)$/i.test(name)))
+                            warnings.push("This package contains executable or script files.");
+                          if (/\b(mcpServers|\.mcp\.json|command\s*:)/i.test(text) || names.some((name) => /mcp/i.test(name)))
+                            warnings.push("This package references MCP configuration or commands.");
+                          if (/\b(curl|wget|invoke-webrequest|powershell|rm\s+-rf|format\s+c:)/i.test(text))
+                            warnings.push("The documentation contains shell commands; review them before use.");
+                          setReadme({
+                            name: i.name,
+                            text,
+                            source: i.url,
+                            files: names,
+                            description: field("description"),
+                            version: field("version"),
+                            warnings,
+                          });
                         } catch (e) {
                           setError(
                             e instanceof Error
@@ -788,6 +890,20 @@ export function MarketplacePage() {
             Remote content is untrusted. Review instructions and scripts before
             any manual installation.
           </p>
+          <div className="marketplace-metadata">
+            <span><strong>Description</strong> {readme.description}</span>
+            <span><strong>Version</strong> {readme.version}</span>
+            <span><strong>Author/source</strong> {readme.source}</span>
+            <span><strong>Compatibility</strong> Unknown until an adapter verifies it</span>
+          </div>
+          <p><strong>Files inspected ({readme.files.length})</strong></p>
+          <ul className="marketplace-files">
+            {readme.files.map((file) => <li key={file}><code>{file}</code></li>)}
+          </ul>
+          {readme.warnings.map((warning) => (
+            <p className="warning" role="alert" key={warning}>{warning}</p>
+          ))}
+          <p className="muted">Install preview: exactly one file will be copied — <code>{readme.name}/SKILL.md</code>. Bundled files remain untouched.</p>
           <pre>{readme.text}</pre>
         </div>
       )}

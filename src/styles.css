@@ -756,6 +756,25 @@ select {
   color: var(--text);
   padding: 24px;
 }
+.project-list-compact {
+  display: grid;
+  gap: 6px;
+}
+.project-compact-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text);
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.project-compact-row:hover { border-color: var(--accent); }
+.project-compact-row small { color: var(--muted); }
 .project-card:hover {
   background: var(--hover);
 }
@@ -1311,6 +1330,16 @@ select {
   gap: 12px;
   margin: 24px 0;
 }
+.marketplace-metadata {
+  display: grid;
+  gap: 5px;
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+.marketplace-metadata strong { color: var(--text); margin-right: 6px; }
+.marketplace-files { margin: 4px 0 12px; padding-left: 18px; color: var(--muted); }
+.warning { color: #eab308; border-left: 2px solid #eab308; padding-left: 10px; }
 .marketplace-source {
   display: grid;
   gap: 8px;

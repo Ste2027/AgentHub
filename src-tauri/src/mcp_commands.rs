@@ -147,6 +147,34 @@ pub async fn duplicate_mcp_server(
 }
 
 #[tauri::command]
+pub async fn add_mcp_server(
+    path: String,
+    name: String,
+    config_json: String,
+    expected: String,
+) -> Result<String, String> {
+    let (p, mut root) = load_json(&path)?;
+    let current = std::fs::read_to_string(&p).map_err(|e| e.to_string())?;
+    if format!("{:x}", sha2::Sha256::digest(current.as_bytes())) != expected {
+        return Err("This MCP config changed on disk. Reload it before saving.".into());
+    }
+    if name.is_empty() || name.len() > 96 || name.contains(['/', '\\']) {
+        return Err("Server name must be a simple name".into());
+    }
+    let value: serde_json::Value =
+        serde_json::from_str(&config_json).map_err(|e| format!("Invalid server JSON: {e}"))?;
+    if !value.is_object() {
+        return Err("Server configuration must be a JSON object".into());
+    }
+    let servers = server_object(&mut root)?;
+    if servers.contains_key(&name) {
+        return Err("A server with that name already exists".into());
+    }
+    servers.insert(name, value);
+    write_json_config(&p, &root)
+}
+
+#[tauri::command]
 pub async fn remove_mcp_server(
     path: String,
     name: String,

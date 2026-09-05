@@ -395,6 +395,7 @@ export function App() {
                   overview={overview}
                   detected={detected}
                   sessions={sessions}
+                  projects={projects}
                   loading={loading}
                   select={select}
                   navigate={navigate}

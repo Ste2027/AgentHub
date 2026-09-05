@@ -139,6 +139,7 @@ pub fn run() {
             crate::mcp_commands::read_mcp_config,
             crate::mcp_commands::save_mcp_config,
             crate::mcp_commands::duplicate_mcp_server,
+            crate::mcp_commands::add_mcp_server,
             crate::mcp_commands::remove_mcp_server,
             crate::mcp_commands::set_mcp_enabled,
             crate::mcp_commands::copy_mcp_server,

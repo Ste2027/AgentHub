@@ -46,6 +46,8 @@ export const api = {
     call<string>("save_mcp_config", { path, text, expected }),
   duplicateMcpServer: (path: string, name: string, newName: string, expected: string) =>
     call<string>("duplicate_mcp_server", { path, name, newName, expected }),
+  addMcpServer: (path: string, name: string, configJson: string, expected: string) =>
+    call<string>("add_mcp_server", { path, name, configJson, expected }),
   removeMcpServer: (path: string, name: string, expected: string) =>
     call<string>("remove_mcp_server", { path, name, expected }),
   setMcpEnabled: (path: string, name: string, enabled: boolean, expected: string) =>

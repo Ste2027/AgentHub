@@ -15,6 +15,7 @@ import type {
   Page,
   Skill,
   McpServer,
+  Analytics,
 } from "@/lib/types";
 import { api, desktop } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ export function OverviewPage({
   overview,
   detected,
   sessions,
+  projects,
   loading,
   select,
   navigate,
@@ -31,10 +33,16 @@ export function OverviewPage({
   overview: Overview | null;
   detected: Agent[];
   sessions: Session[];
+  projects: Project[];
   loading: boolean;
   select: (s: Session) => void;
   navigate: (p: Page) => void;
 }) {
+  const [analytics, setAnalytics] = useState<Analytics | null>(null);
+  useEffect(() => {
+    if (desktop) api.analytics().then(setAnalytics).catch(() => undefined);
+  }, []);
+  const toolCalls = analytics?.tools.reduce((total, metric) => total + metric.count, 0);
   return (
     <>
       <section className="hero-panel">
@@ -81,6 +89,16 @@ export function OverviewPage({
             value: overview ? detected.length : undefined,
             icon: Cpu,
           },
+          {
+            label: "Messages",
+            value: analytics?.event_count,
+            icon: MessagesSquare,
+          },
+          {
+            label: "Tool calls",
+            value: toolCalls,
+            icon: Cpu,
+          },
         ].map((s) => (
           <div className="stat-card" key={s.label}>
             <span>
@@ -120,6 +138,31 @@ export function OverviewPage({
             action="Configure agent paths"
             onAction={() => navigate("settings")}
           />
+        )}
+      </section>
+      <section className="panel">
+        <div className="section-heading">
+          <h2>Recent projects <span className="subtle-badge">LOCAL WORK</span></h2>
+          <Button variant="ghost" size="sm" onClick={() => navigate("projects")}>
+            View all <ArrowUpRight size={14} />
+          </Button>
+        </div>
+        {projects?.length ? (
+          <div className="project-list-compact">
+            {projects.slice(0, 4).map((project) => (
+              <button
+                className="project-compact-row"
+                key={project.path}
+                onClick={() => navigate("projects")}
+              >
+                <FolderGit2 size={16} />
+                <span>{project.name}</span>
+                <small>{project.sessions} sessions</small>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="muted">Projects appear after the first local index.</p>
         )}
       </section>
       <p className="bottom-caption">
