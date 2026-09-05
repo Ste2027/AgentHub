@@ -94,6 +94,7 @@ export function App() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selected, setSelected] = useState<Session | null>(null);
+  const [resourceSelection, setResourceSelection] = useState<SearchHit | null>(null);
   const [ordinal, setOrdinal] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
   const [error, setError] = useState("");
@@ -181,6 +182,7 @@ export function App() {
     if (memoryDirty && !window.confirm("Discard unsaved memory changes?"))
       return;
     setMemoryDirty(false);
+    setResourceSelection(null);
     setMemorySelection(null);
     setPage(next);
     setSelected(null);
@@ -221,6 +223,7 @@ export function App() {
     }
     if (hit.entity_type === "skill" || hit.entity_type === "mcp") {
       setSelected(null);
+      setResourceSelection({ ...hit });
       setPage(hit.entity_type === "skill" ? "skills" : "mcp");
       return;
     }
@@ -453,8 +456,8 @@ export function App() {
                 />
               )}
               {page === "analytics" && <Analytics revision={revision} />}
-              {page === "skills" && <SkillsPage />}
-              {page === "mcp" && <McpPage />}
+              {page === "skills" && <SkillsPage selection={resourceSelection} />}
+              {page === "mcp" && <McpPage selection={resourceSelection} />}
               {page === "marketplace" && <MarketplacePage />}
             </>
           )}

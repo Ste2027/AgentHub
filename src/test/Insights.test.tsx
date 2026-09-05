@@ -86,6 +86,16 @@ it("shows source failures", async () => {
   render(<ContextExport sessionId="s" onClose={vi.fn()} />);
   expect(await screen.findByRole("alert")).toHaveTextContent("Session missing");
 });
+it("offers matching memories from later pages without selecting them automatically", async () => {
+  mocks.memories.mockResolvedValueOnce({ items: [{ id: "unrelated", title: "Other project", scope: "project", project: "/other", agents: [] }], total: 2 })
+    .mockResolvedValueOnce({ items: [{ id: "later", title: "Later convention", scope: "global", body: "Keep schemas versioned", agents: [] }], total: 2 });
+  render(<ContextExport sessionId="s" onClose={vi.fn()} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Load more memories" }));
+  expect(await screen.findByRole("checkbox", { name: "Later convention global" })).not.toBeChecked();
+  expect(mocks.memories).toHaveBeenLastCalledWith("", "", false, 1);
+  expect(screen.queryByRole("checkbox", { name: "Other project project" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Load more memories" })).not.toBeInTheDocument();
+});
 it("renders empty analytics without invented data", async () => {
   mocks.analytics.mockResolvedValue({
     session_count: 0,

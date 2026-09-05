@@ -22,12 +22,17 @@ export function ContextExport({
   const [format, setFormat] = useState<"markdown" | "json">("markdown");
   const [memories, setMemories] = useState<Memory[]>([]);
   const [selectedMemoryIds, setSelectedMemoryIds] = useState<string[]>([]);
+  const [memoryOffset, setMemoryOffset] = useState(0);
+  const [memoryTotal, setMemoryTotal] = useState(0);
+  const [loadingMemories, setLoadingMemories] = useState(false);
   useEffect(() => {
     let active = true;
     Promise.all([api.context(sessionId), api.memories("", "", false, 0)])
       .then(([c, page]) => {
         if (active) {
           setContext(c);
+          setMemoryOffset(page.items.length);
+          setMemoryTotal(page.total);
           setMemories(
             page.items.filter(
               (m) =>
@@ -48,6 +53,20 @@ export function ContextExport({
       active = false;
     };
   }, [sessionId]);
+  async function loadMoreMemories() {
+    if (!context || loadingMemories) return;
+    setLoadingMemories(true);
+    try {
+      const page = await api.memories("", "", false, memoryOffset);
+      const matching = page.items.filter((m) => m.scope === "global" ||
+        (m.scope === "project" && m.project === context.project) ||
+        (m.scope === "agent" && m.agents.includes(context.source_agent)));
+      setMemories((existing) => [...new Map([...existing, ...matching].map((m) => [m.id, m])).values()]);
+      setMemoryOffset((offset) => offset + page.items.length);
+      setMemoryTotal(page.items.length ? page.total : memoryOffset);
+    } catch (e) { setError(errorMessage(e)); }
+    finally { setLoadingMemories(false); }
+  }
   async function exportFile() {
     if (!context) return;
     setSaving(true);
@@ -178,7 +197,7 @@ export function ContextExport({
             <p><strong>Repository:</strong> {context.repository || "Not detected"}</p>
             <p><strong>Git diff:</strong> {context.git_diff}</p>
           </div>
-          {memories.length > 0 && (
+          {(memories.length > 0 || memoryOffset < memoryTotal) && (
             <fieldset className="context-memories">
               <legend>Include memories (optional)</legend>
               <p className="field-note">
@@ -201,6 +220,11 @@ export function ContextExport({
                   {m.title} <span className="badge">{m.scope}</span>
                 </label>
               ))}
+              {memoryOffset < memoryTotal && (
+                <Button variant="outline" disabled={loadingMemories} onClick={() => void loadMoreMemories()}>
+                  {loadingMemories ? "Loading memories…" : "Load more memories"}
+                </Button>
+              )}
             </fieldset>
           )}
           <details>

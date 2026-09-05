@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, desktop } from "@/lib/api";
-import type { McpServer, Skill } from "@/lib/types";
+import type { McpServer, Skill, SearchHit } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Empty } from "@/components/Empty";
 import { saveText } from "@/lib/files";
@@ -18,7 +18,7 @@ function diffText(before: string, after: string): string {
   }).join("\n");
 }
 
-export function SkillsPage() {
+export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
   const [items, setItems] = useState<Skill[]>([]);
   const [open, setOpen] = useState<{
     name: string;
@@ -32,6 +32,15 @@ export function SkillsPage() {
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [agent, setAgent] = useState("");
+  useEffect(() => {
+    if (!desktop || selection?.entity_type !== "skill" || !selection.entity_id) return;
+    let active = true;
+    const path = selection.entity_id;
+    api.skillContent(path).then((file) => {
+      if (active) setOpen({ name: selection.title, path, text: file.text, original: file.text, hash: file.hash, editing: false });
+    }).catch(() => { if (active) setError("This skill could not be opened. It may have moved or become unreadable."); });
+    return () => { active = false; };
+  }, [selection]);
   useEffect(() => {
     if (desktop)
       api
@@ -70,7 +79,7 @@ export function SkillsPage() {
           <h2>Skills</h2>
           <p className="muted">
             Local SKILL.md folders discovered for Claude Code and Codex.
-            AgentHub reads them and never runs or edits them.
+            Review files and explicitly apply changes. AgentHub never runs skills.
           </p>
         </div>
         <span className="badge">{items.length} discovered</span>
@@ -331,7 +340,7 @@ export function SkillsPage() {
   );
 }
 
-export function McpPage() {
+export function McpPage({ selection }: { selection?: SearchHit | null }) {
   const [items, setItems] = useState<McpServer[]>([]);
   const [error, setError] = useState("");
   const [open, setOpen] = useState<{
@@ -341,6 +350,15 @@ export function McpPage() {
     hash: string;
     editing: boolean;
   } | null>(null);
+  useEffect(() => {
+    if (!desktop || selection?.entity_type !== "mcp" || !selection.entity_id) return;
+    let active = true;
+    const path = selection.entity_id;
+    api.mcpConfig(path).then((file) => {
+      if (active) setOpen({ path, text: file.text, original: file.text, hash: file.hash, editing: false });
+    }).catch(() => { if (active) setError("This MCP configuration could not be opened. It may have moved or become unreadable."); });
+    return () => { active = false; };
+  }, [selection]);
   useEffect(() => {
     if (desktop)
       api
@@ -370,7 +388,7 @@ export function McpPage() {
         <div>
           <h2>MCP servers</h2>
           <p className="muted">
-            Review-only view of Claude and Codex configuration. AgentHub never
+            Review Claude and Codex configuration and explicitly edit supported formats. AgentHub never
             starts a server, connects to it or reveals secret values.
           </p>
         </div>
