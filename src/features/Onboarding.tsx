@@ -26,40 +26,65 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
     onDone();
   };
   return (
-    <section className="onboarding panel" aria-label="AgentHub onboarding">
-      <button
-        className="onboarding-close"
-        aria-label="Skip onboarding"
-        onClick={finish}
+    <div className="onboarding-backdrop">
+      <section
+        className="onboarding-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="onboarding-title"
       >
-        <X size={16} />
-      </button>
-      <div className="onboarding-icon">
-        <ShieldCheck size={24} />
-      </div>
-      <span className="eyebrow">
-        GETTING STARTED · {step + 1}/{steps.length}
-      </span>
-      <h2>{steps[step][0]}</h2>
-      <p>{steps[step][1]}</p>
-      <div className="onboarding-steps">
-        {steps.map((s, i) => (
-          <span className={i <= step ? "active" : ""} key={s[0]}>
-            <Check size={13} />
-            {s[0]}
+        <button
+          className="onboarding-close"
+          aria-label="Skip onboarding"
+          onClick={finish}
+        >
+          <X size={17} />
+        </button>
+        <div className="onboarding-visual" aria-hidden="true">
+          <div className="onboarding-orbit orbit-one" />
+          <div className="onboarding-orbit orbit-two" />
+          <div className="onboarding-icon">
+            <ShieldCheck size={34} />
+          </div>
+          <span>LOCAL ONLY</span>
+        </div>
+        <div className="onboarding-content">
+          <span className="eyebrow">
+            GETTING STARTED · {step + 1}/{steps.length}
           </span>
-        ))}
-      </div>
-      <footer>
-        <Button variant="ghost" onClick={finish}>
-          Skip
-        </Button>
-        {step < steps.length - 1 ? (
-          <Button onClick={() => setStep(step + 1)}>Next</Button>
-        ) : (
-          <Button onClick={finish}>Start using AgentHub</Button>
-        )}
-      </footer>
-    </section>
+          <h2 id="onboarding-title">{steps[step][0]}</h2>
+          <p>{steps[step][1]}</p>
+          <div className="onboarding-steps" aria-label="Onboarding steps">
+            {steps.map((s, i) => (
+              <button
+                type="button"
+                className={i === step ? "current" : i < step ? "complete" : ""}
+                key={s[0]}
+                onClick={() => setStep(i)}
+                aria-current={i === step ? "step" : undefined}
+              >
+                <span>{i < step ? <Check size={13} /> : i + 1}</span>
+                {s[0]}
+              </button>
+            ))}
+          </div>
+          <footer>
+            <Button variant="ghost" onClick={finish}>
+              Skip for now
+            </Button>
+            {step > 0 && (
+              <Button variant="outline" onClick={() => setStep(step - 1)}>
+                Back
+              </Button>
+            )}
+            {step < steps.length - 1 ? (
+              <Button onClick={() => setStep(step + 1)}>Continue</Button>
+            ) : (
+              <Button onClick={finish}>Open my workspace</Button>
+            )}
+          </footer>
+        </div>
+      </section>
+    </div>
   );
 }
