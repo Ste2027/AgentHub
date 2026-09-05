@@ -170,6 +170,24 @@ export function MemoryLibrary({
     );
   return (
     <>
+      <section className="panel memory-guide" aria-label="How memories work">
+        <div className="memory-guide-icon">
+          <Brain size={18} />
+        </div>
+        <div>
+          <h3>How memories work</h3>
+          <p>
+            Memories are private notes you keep for decisions, conventions and
+            reusable context. They stay in AgentHub and are never injected into
+            an agent automatically.
+          </p>
+          <div className="memory-guide-steps">
+            <span><strong>1</strong> Create a note</span>
+            <span><strong>2</strong> Choose global, project or agent scope</span>
+            <span><strong>3</strong> Select it in Context Export when needed</span>
+          </div>
+        </div>
+      </section>
       <div className="library-toolbar">
         <div className="segmented">
           <Button

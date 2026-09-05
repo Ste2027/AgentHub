@@ -20,6 +20,8 @@ import {
   ChevronRight,
   Brain,
   BarChart3,
+  Sparkles,
+  Store,
 } from "lucide-react";
 import { api, desktop } from "./lib/api";
 import type {
@@ -49,10 +51,10 @@ const pages = [
   { id: "sessions", label: "Sessions", icon: MessagesSquare },
   { id: "projects", label: "Projects", icon: FolderGit2 },
   { id: "memories", label: "Memories", icon: Brain },
-  { id: "analytics", label: "Activity", icon: BarChart3 },
-  { id: "skills", label: "Skills", icon: Brain },
+  { id: "skills", label: "Skills", icon: Sparkles },
   { id: "mcp", label: "MCP", icon: Cpu },
-  { id: "marketplace", label: "Marketplace", icon: Layers3 },
+  { id: "marketplace", label: "Marketplace", icon: Store },
+  { id: "analytics", label: "Activity", icon: BarChart3 },
   { id: "agents", label: "Agents", icon: Cpu },
   { id: "settings", label: "Settings", icon: SlidersHorizontal },
 ] as const;

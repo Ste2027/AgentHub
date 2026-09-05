@@ -5,6 +5,58 @@
   margin-bottom: 20px;
   align-items: center;
 }
+.memory-guide {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 7%, var(--panel));
+}
+.memory-guide-icon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 8px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+.memory-guide h3 {
+  margin: 0 0 5px;
+  font-size: 13px;
+}
+.memory-guide p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.memory-guide-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 10px;
+  color: var(--text);
+  font-size: 11px;
+}
+.memory-guide-steps span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.memory-guide-steps strong {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: var(--accent-contrast, #fff);
+  background: var(--accent);
+  font-size: 10px;
+}
 .segmented {
   display: flex;
   gap: 3px;
