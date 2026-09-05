@@ -952,6 +952,79 @@ select {
   color: var(--accent);
   margin-bottom: 17px;
 }
+.project-detail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.project-detail-card > header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+}
+.project-detail-card > header > svg {
+  color: var(--accent);
+}
+.project-detail-card > header code {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.project-facts {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+.project-facts span {
+  display: grid;
+  gap: 3px;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 9px;
+}
+.project-facts strong {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 550;
+}
+.project-facts .has-errors strong {
+  color: #e5a5a0;
+}
+.project-activity {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 7px 14px;
+  font-size: 10px;
+}
+.project-activity small,
+.project-activity span {
+  color: var(--muted);
+}
+.project-activity span {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.project-detail-card details code {
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+}
+.project-detail-card footer {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding-top: 15px;
+}
+.project-detail-card footer .button {
+  margin-left: auto;
+}
 .project-card p {
   color: var(--muted);
   font-size: 11px;

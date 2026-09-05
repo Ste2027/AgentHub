@@ -21,6 +21,7 @@ import { api, desktop } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Empty } from "@/components/Empty";
 import { SessionList } from "@/components/SessionList";
+import { date } from "@/lib/utils";
 export function OverviewPage({
   overview,
   detected,
@@ -366,26 +367,69 @@ export function ProjectsPage({
   return projects.length ? (
     <div className="project-grid">
       {projects.map((p) => (
-        <button
+        <article
           key={p.path}
-          className="panel project-card"
-          onClick={() => {
-            setProjectFilter(p.path);
-            setOffset(0);
-            setPage("sessions");
-          }}
+          className="panel project-card project-detail-card"
         >
-          <FolderGit2 size={23} />
-          <h2>{p.name}</h2>
-          <p>{p.path}</p>
-          <footer>
+          <header>
+            <FolderGit2 size={23} />
+            <div>
+              <h2>{p.name}</h2>
+              <code>{p.path}</code>
+            </div>
+            {p.git && (
+              <span className="badge accent">
+                Git · {p.branch || "detached"}
+              </span>
+            )}
+          </header>
+          <div className="project-facts">
             <span>
-              {p.sessions} sessions · {p.agents}
+              <strong>{p.sessions}</strong> Sessions
             </span>
-            {p.git && <span className="badge">Git</span>}
-            <ArrowUpRight size={16} />
+            <span>
+              <strong>{p.agents?.split(",").length || 0}</strong> Agents
+            </span>
+            <span>
+              <strong>{p.memories ?? 0}</strong> Memories
+            </span>
+            <span>
+              <strong>{p.skills ?? 0}</strong> Skills
+            </span>
+            <span className={p.errors ? "has-errors" : ""}>
+              <strong>{p.errors ?? 0}</strong> Errors
+            </span>
+          </div>
+          <div className="project-activity">
+            <strong>Recent activity</strong>
+            <small>{date(p.updated_at)}</small>
+            {(p.recent_activity ?? []).map((activity) => (
+              <span key={activity}>{activity}</span>
+            ))}
+          </div>
+          {(p.modified_files ?? []).length > 0 && (
+            <details>
+              <summary>{p.modified_files.length} referenced files</summary>
+              {p.modified_files.map((file) => (
+                <code key={file}>{file}</code>
+              ))}
+            </details>
+          )}
+          <footer>
+            <span>{p.agents}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setProjectFilter(p.path);
+                setOffset(0);
+                setPage("sessions");
+              }}
+            >
+              Open sessions <ArrowUpRight size={14} />
+            </Button>
           </footer>
-        </button>
+        </article>
       ))}
     </div>
   ) : (

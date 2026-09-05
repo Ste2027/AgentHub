@@ -43,6 +43,12 @@ export interface Project {
   agents: string;
   updated_at: string;
   git: boolean;
+  branch: string;
+  memories: number;
+  skills: number;
+  errors: number;
+  modified_files: string[];
+  recent_activity: string[];
 }
 export interface Overview {
   sessions: number;

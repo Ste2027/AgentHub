@@ -83,6 +83,18 @@ pub fn discover_at(home: &Path, projects: &[String]) -> Vec<Skill> {
     let mut out = Vec::new();
     scan(&home.join(".agents/skills"), "codex", "user", &mut out);
     scan(&home.join(".claude/skills"), "claude", "user", &mut out);
+    out.extend(discover_projects(projects));
+    out.sort_by(|a, b| {
+        a.agent
+            .cmp(&b.agent)
+            .then(a.name.cmp(&b.name))
+            .then(a.path.cmp(&b.path))
+    });
+    out
+}
+
+pub fn discover_projects(projects: &[String]) -> Vec<Skill> {
+    let mut out = Vec::new();
     for project in projects {
         let p = Path::new(project);
         scan(&p.join(".agents/skills"), "codex", "project", &mut out);

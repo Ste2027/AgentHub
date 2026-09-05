@@ -151,6 +151,7 @@ pub fn prepare(root: &Path, db: &mut Database) -> Result<IndexProgress, String> 
     ];
     for project in &projects {
         std::fs::create_dir_all(project.join(".git")).map_err(|e| e.to_string())?;
+        crate::exports::replace_text(&project.join(".git/HEAD"), "ref: refs/heads/main\n")?;
         std::fs::create_dir_all(project.join("src")).map_err(|e| e.to_string())?;
     }
     let claude = [
@@ -286,6 +287,11 @@ pub fn prepare(root: &Path, db: &mut Database) -> Result<IndexProgress, String> 
             "UI review",
             "Inspect every route at desktop and compact window sizes with keyboard navigation.",
         ),
+        (
+            projects[0].join(".agents/skills/context-handoff"),
+            "Context handoff",
+            "Prepare a concise cross-agent package with selected memories and unresolved work.",
+        ),
     ];
     for (folder, title, description) in skills {
         std::fs::create_dir_all(folder.join("references")).map_err(|e| e.to_string())?;
@@ -332,6 +338,17 @@ mod tests {
             8
         );
         assert_eq!(db.memories("", "", false, 0).unwrap().total, 3);
+        let projects = db.projects().unwrap();
+        let atlas = projects
+            .iter()
+            .find(|project| project.name == "atlas-desktop")
+            .unwrap();
+        assert_eq!(atlas.branch, "main");
+        assert_eq!(atlas.memories, 1);
+        assert_eq!(atlas.skills, 1);
+        assert!(!atlas.recent_activity.is_empty());
+        assert!(!atlas.modified_files.is_empty());
+        assert!(projects.iter().map(|project| project.errors).sum::<usize>() >= 2);
         for skill in crate::skills::discover_at(&temp.path().join("home"), &[]) {
             assert!(Path::new(&skill.path).starts_with(temp.path()));
         }

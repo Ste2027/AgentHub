@@ -227,6 +227,7 @@ impl Database {
                     .unwrap_or(&path)
                     .to_owned();
                 let git = crate::paths::has_local_git_marker(Path::new(&path));
+                let branch = crate::paths::git_branch(Path::new(&path));
                 Ok(Project {
                     path,
                     name,
@@ -234,11 +235,76 @@ impl Database {
                     agents: r.get(2)?,
                     updated_at: r.get(3)?,
                     git,
+                    branch,
+                    memories: 0,
+                    skills: 0,
+                    errors: 0,
+                    modified_files: Vec::new(),
+                    recent_activity: Vec::new(),
                 })
             })
             .map_err(|e| e.to_string())?;
-        rows.collect::<rusqlite::Result<_>>()
-            .map_err(|e| e.to_string())
+        let mut projects = rows
+            .collect::<rusqlite::Result<Vec<_>>>()
+            .map_err(|e| e.to_string())?;
+        drop(stmt);
+        let paths = projects
+            .iter()
+            .map(|project| project.path.clone())
+            .collect::<Vec<_>>();
+        let discovered_skills = crate::skills::discover_projects(&paths);
+        for project in &mut projects {
+            project.memories = self
+                .conn
+                .query_row(
+                    "SELECT count(*) FROM memories WHERE deleted_at IS NULL AND scope='project' AND project=?1",
+                    [&project.path],
+                    |row| row.get(0),
+                )
+                .map_err(|e| e.to_string())?;
+            project.skills = discovered_skills
+                .iter()
+                .filter(|skill| {
+                    skill.scope == "project" && Path::new(&skill.path).starts_with(&project.path)
+                })
+                .count();
+            project.errors = self
+                .conn
+                .query_row(
+                    "SELECT count(*) FROM events e JOIN sessions s ON s.id=e.session_id WHERE s.project=?1 AND e.kind='error'",
+                    [&project.path],
+                    |row| row.get(0),
+                )
+                .map_err(|e| e.to_string())?;
+            let mut recent = self
+                .conn
+                .prepare(
+                    "SELECT title FROM sessions WHERE project=?1 ORDER BY updated_at DESC,id LIMIT 3",
+                )
+                .map_err(|e| e.to_string())?;
+            project.recent_activity = recent
+                .query_map([&project.path], |row| row.get(0))
+                .map_err(|e| e.to_string())?
+                .collect::<rusqlite::Result<Vec<_>>>()
+                .map_err(|e| e.to_string())?;
+            let mut events = self.conn.prepare("SELECT e.name,e.text FROM events e JOIN sessions s ON s.id=e.session_id WHERE s.project=?1 AND e.kind='tool_call' ORDER BY s.updated_at DESC,e.ordinal DESC LIMIT 200").map_err(|e|e.to_string())?;
+            let rows = events
+                .query_map([&project.path], |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                })
+                .map_err(|e| e.to_string())?;
+            let mut files = std::collections::BTreeSet::new();
+            for row in rows {
+                let (name, text) = row.map_err(|e| e.to_string())?;
+                for file in crate::insights::tool_details(&name, &text).files {
+                    if files.len() < 12 {
+                        files.insert(file);
+                    }
+                }
+            }
+            project.modified_files = files.into_iter().collect();
+        }
+        Ok(projects)
     }
     pub fn overview(&self, database_path: String) -> Result<Overview> {
         let counts = self.conn.query_row("SELECT (SELECT count(*) FROM sessions),(SELECT count(*) FROM projects WHERE path<>''),(SELECT count(*) FROM events)",[],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?))).map_err(|e|e.to_string())?;

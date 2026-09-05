@@ -55,6 +55,12 @@ pub struct Project {
     pub agents: String,
     pub updated_at: String,
     pub git: bool,
+    pub branch: String,
+    pub memories: usize,
+    pub skills: usize,
+    pub errors: usize,
+    pub modified_files: Vec<String>,
+    pub recent_activity: Vec<String>,
 }
 #[derive(Debug, Serialize)]
 pub struct SearchHit {
