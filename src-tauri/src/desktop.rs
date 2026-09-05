@@ -132,6 +132,8 @@ pub fn run() {
             crate::skill_commands::read_skill,
             crate::skill_commands::save_skill,
             crate::mcp_commands::list_mcp_servers,
+            crate::mcp_commands::read_mcp_config,
+            crate::mcp_commands::save_mcp_config,
             overview,
             get_settings,
             save_settings,

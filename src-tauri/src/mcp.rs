@@ -19,6 +19,11 @@ pub struct McpServer {
     pub enabled: bool,
     pub readable: bool,
 }
+#[derive(Debug, Serialize)]
+pub struct McpFile {
+    pub text: String,
+    pub hash: String,
+}
 fn add_json(path: &Path, agent: &str, scope: &str, out: &mut Vec<McpServer>) {
     let Ok(text) = fs::read_to_string(path) else {
         return;

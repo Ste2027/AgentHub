@@ -165,3 +165,7 @@ export interface McpServer {
   enabled: boolean;
   readable: boolean;
 }
+export interface McpFile {
+  text: string;
+  hash: string;
+}

@@ -5,6 +5,7 @@ import type {
   Skill,
   McpServer,
   SkillFile,
+  McpFile,
 } from "./types";
 import type { Memory, MemoryDraft, MemoryPage, ImportResult } from "./types";
 import type {
@@ -33,6 +34,9 @@ export const api = {
   saveSkill: (path: string, text: string, expected: string) =>
     call<string>("save_skill", { path, text, expected }),
   mcpServers: () => call<McpServer[]>("list_mcp_servers"),
+  mcpConfig: (path: string) => call<McpFile>("read_mcp_config", { path }),
+  saveMcpConfig: (path: string, text: string, expected: string) =>
+    call<string>("save_mcp_config", { path, text, expected }),
   context: (sessionId: string) =>
     call<SessionContext>("session_context", { sessionId }),
   memories: (query = "", scope = "", trash = false, offset = 0) =>

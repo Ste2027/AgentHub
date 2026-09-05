@@ -165,6 +165,12 @@ export function SkillsPage() {
 export function McpPage() {
   const [items, setItems] = useState<McpServer[]>([]);
   const [error, setError] = useState("");
+  const [open, setOpen] = useState<{
+    path: string;
+    text: string;
+    hash: string;
+    editing: boolean;
+  } | null>(null);
   useEffect(() => {
     if (desktop)
       api
@@ -214,7 +220,31 @@ export function McpPage() {
                   {s.env_keys.length ? ` · ${s.env_keys.length} env keys` : ""}
                 </small>
               </div>
-              <span className="badge">Review only</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  api
+                    .mcpConfig(s.config_path)
+                    .then((f) =>
+                      setOpen({
+                        path: s.config_path,
+                        text: f.text,
+                        hash: f.hash,
+                        editing: false,
+                      }),
+                    )
+                    .catch((e) =>
+                      setError(
+                        e instanceof Error
+                          ? e.message
+                          : "Could not read config.",
+                      ),
+                    )
+                }
+              >
+                Review
+              </Button>
             </article>
           ))}
         </div>
@@ -223,6 +253,71 @@ export function McpPage() {
           title="No MCP servers discovered"
           body="Add a Claude .mcp.json or Codex config.toml, then reopen this page."
         />
+      )}
+      {open && (
+        <div className="resource-preview">
+          <header>
+            <h3>Configuration preview</h3>
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setOpen({ ...open, editing: !open.editing })}
+              >
+                {open.editing ? "Cancel edit" : "Edit JSON"}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setOpen(null)}>
+                Close
+              </Button>
+            </div>
+          </header>
+          {open.editing ? (
+            <>
+              <textarea
+                className="skill-editor"
+                aria-label="MCP configuration"
+                value={open.text}
+                onChange={(e) => setOpen({ ...open, text: e.target.value })}
+              />
+              <details open>
+                <summary>Preview changes</summary>
+                <pre>{open.text}</pre>
+              </details>
+              <Button
+                onClick={() => {
+                  if (
+                    !window.confirm(
+                      "Create a backup and save this MCP configuration?",
+                    )
+                  )
+                    return;
+                  api
+                    .saveMcpConfig(open.path, open.text, open.hash)
+                    .then(() => api.mcpConfig(open.path))
+                    .then((f) =>
+                      setOpen({
+                        ...open,
+                        text: f.text,
+                        hash: f.hash,
+                        editing: false,
+                      }),
+                    )
+                    .catch((e) =>
+                      setError(
+                        e instanceof Error
+                          ? e.message
+                          : "Could not save this configuration.",
+                      ),
+                    );
+                }}
+              >
+                Save MCP config
+              </Button>
+            </>
+          ) : (
+            <pre>{open.text}</pre>
+          )}
+        </div>
       )}
     </section>
   );
