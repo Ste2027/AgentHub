@@ -16,8 +16,9 @@ Checks performed during development:
 - Optimized Windows executable built with `npm run desktop:build -- --no-bundle`. The delivered release-mode executable was launched with isolated storage, stayed responsive, reported its AgentHub window and created the database without a development server.
 - Full `npm run desktop` startup: native window responding and Vite HTTP 200. The Vite watcher excludes Rust build output to avoid Windows EBUSY errors; development CSP permits only the local development websocket in addition to IPC.
 - Native startup smoke check using `AGENTHUB_DATA_DIR` under an isolated scratch directory: the executable stayed running and responding, reported an AgentHub window, and created its SQLite database. No personal sessions were indexed for this check.
+- GitHub Actions release matrix for tag `v0.1.0`: Windows, macOS and Ubuntu jobs completed successfully and published nine release assets. The artifacts are unsigned.
 - Browser visual inspection of the overview and settings, and keyboard-opened search with focus on the search field. The README screenshot is from the actual empty browser preview.
 
 The Windows sandbox prevented the build tools from reading ancestor directories and prevented native startup. The checks succeeded outside that sandbox. This was an execution-environment restriction, not a workaround added to application code.
 
-Not verified here: signed release installers, macOS/Linux packaging, every provider version, large personal archives, or full native UI end-to-end flows.
+Not verified here: signed release installers, every provider version, large personal archives, or full native UI end-to-end flows. The macOS/Linux packages are CI-built artifacts and were not launched on this Windows host.
