@@ -26,6 +26,7 @@ import {
 import { api, desktop } from "./lib/api";
 import type {
   IndexProgress,
+  Memory,
   Overview,
   Page,
   Project,
@@ -116,6 +117,7 @@ export function App() {
     id: string;
     key: number;
   } | null>(null);
+  const [contextMemoryIds, setContextMemoryIds] = useState<string[]>([]);
   const [onboarding, setOnboarding] = useState(
     () => desktop && localStorage.getItem("agenthub.onboarding.v1") !== "done",
   );
@@ -394,6 +396,7 @@ export function App() {
               session={selected}
               initialOrdinal={ordinal}
               onBack={() => setSelected(null)}
+              contextMemoryIds={contextMemoryIds}
             />
           ) : (
             <>
@@ -465,6 +468,8 @@ export function App() {
                   sessions={sessions}
                   select={select}
                   navigate={navigate}
+                  stagedMemoryCount={contextMemoryIds.length}
+                  clearStagedMemories={() => setContextMemoryIds([])}
                 />
               )}{" "}
               {page === "projects" && (
@@ -497,6 +502,14 @@ export function App() {
                   initialId={memorySelection?.id}
                   projects={projects}
                   onDirty={setMemoryDirty}
+                  onUseInContext={(memory: Memory) => {
+                    setContextMemoryIds((ids) =>
+                      ids.includes(memory.id) ? ids : [...ids, memory.id],
+                    );
+                    setMemoryDirty(false);
+                    setSelected(null);
+                    setPage("sessions");
+                  }}
                 />
               )}
               {page === "analytics" && <Analytics revision={revision} />}

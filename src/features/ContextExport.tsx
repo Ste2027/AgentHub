@@ -6,12 +6,15 @@ import { formatContext } from "@/lib/context";
 import { errorMessage } from "@/lib/utils";
 import type { Memory, SessionContext } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+const noMemoryIds: string[] = [];
 export function ContextExport({
   sessionId,
   onClose,
+  initialMemoryIds = noMemoryIds,
 }: {
   sessionId: string;
   onClose: () => void;
+  initialMemoryIds?: string[];
 }) {
   const [context, setContext] = useState<SessionContext | null>(null);
   const [target, setTarget] = useState("OpenAI Codex");
@@ -27,20 +30,31 @@ export function ContextExport({
   const [loadingMemories, setLoadingMemories] = useState(false);
   useEffect(() => {
     let active = true;
-    Promise.all([api.context(sessionId), api.memories("", "", false, 0)])
-      .then(([c, page]) => {
+    Promise.all([
+      api.context(sessionId),
+      api.memories("", "", false, 0),
+      Promise.all(initialMemoryIds.map((id) => api.memory(id))),
+    ])
+      .then(([c, page, requested]) => {
         if (active) {
           setContext(c);
           setMemoryOffset(page.items.length);
           setMemoryTotal(page.total);
-          setMemories(
-            page.items.filter(
-              (m) =>
-                m.scope === "global" ||
-                (m.scope === "project" && m.project === c.project) ||
-                (m.scope === "agent" && m.agents.includes(c.source_agent)),
-            ),
+          const matching = page.items.filter(
+            (m) =>
+              m.scope === "global" ||
+              (m.scope === "project" && m.project === c.project) ||
+              (m.scope === "agent" && m.agents.includes(c.source_agent)),
           );
+          const explicit = requested.filter((memory): memory is Memory =>
+            Boolean(memory && !memory.deleted_at),
+          );
+          setMemories([
+            ...new Map(
+              [...matching, ...explicit].map((m) => [m.id, m]),
+            ).values(),
+          ]);
+          setSelectedMemoryIds(explicit.map((memory) => memory.id));
           setTarget(
             c.source_agent === "codex" ? "Claude Code" : "OpenAI Codex",
           );
@@ -52,7 +66,7 @@ export function ContextExport({
     return () => {
       active = false;
     };
-  }, [sessionId]);
+  }, [sessionId, initialMemoryIds]);
   async function loadMoreMemories() {
     if (!context || loadingMemories) return;
     setLoadingMemories(true);

@@ -92,6 +92,23 @@ describe("Memory library", () => {
       "agenthub-memories.json",
     );
   });
+  it("stages a memory for context only after the explicit action", async () => {
+    const useInContext = vi.fn();
+    render(
+      <MemoryLibrary
+        projects={[]}
+        onDirty={vi.fn()}
+        onUseInContext={useInContext}
+      />,
+    );
+    expect(useInContext).not.toHaveBeenCalled();
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Use Database decisions in context",
+      }),
+    );
+    expect(useInContext).toHaveBeenCalledWith(item);
+  });
   it("keeps unsaved content on a revision conflict", async () => {
     mocks.saveMemory.mockRejectedValue(
       Error("This memory changed. Reload it."),

@@ -15,10 +15,12 @@ export function Timeline({
   session,
   initialOrdinal = 0,
   onBack,
+  contextMemoryIds = [],
 }: {
   session: Session;
   initialOrdinal?: number;
   onBack: () => void;
+  contextMemoryIds?: string[];
 }) {
   const [offset, setOffset] = useState(Math.floor(initialOrdinal / 100) * 100);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
@@ -48,6 +50,7 @@ export function Timeline({
     return (
       <ContextExport
         sessionId={session.id}
+        initialMemoryIds={contextMemoryIds}
         onClose={() => setExporting(false)}
       />
     );

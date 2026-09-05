@@ -29,10 +29,12 @@ export function MemoryLibrary({
   projects,
   initialId,
   onDirty,
+  onUseInContext,
 }: {
   projects: Project[];
   initialId?: string;
   onDirty: (value: boolean) => void;
+  onUseInContext?: (memory: Memory) => void;
 }) {
   const [page, setPage] = useState<MemoryPage>({ items: [], total: 0 });
   const [query, setQuery] = useState("");
@@ -182,9 +184,15 @@ export function MemoryLibrary({
             an agent automatically.
           </p>
           <div className="memory-guide-steps">
-            <span><strong>1</strong> Create a note</span>
-            <span><strong>2</strong> Choose global, project or agent scope</span>
-            <span><strong>3</strong> Select it in Context Export when needed</span>
+            <span>
+              <strong>1</strong> Create a note
+            </span>
+            <span>
+              <strong>2</strong> Choose global, project or agent scope
+            </span>
+            <span>
+              <strong>3</strong> Select it in Context Export when needed
+            </span>
           </div>
         </div>
       </section>
@@ -327,6 +335,15 @@ export function MemoryLibrary({
                 <div className="memory-actions">
                   {!trash && (
                     <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        aria-label={`Use ${memory.title} in context`}
+                        disabled={busy}
+                        onClick={() => onUseInContext?.(memory)}
+                      >
+                        Use in context
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"

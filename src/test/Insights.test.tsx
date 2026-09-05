@@ -5,6 +5,7 @@ import { Analytics } from "@/features/Analytics";
 const mocks = vi.hoisted(() => ({
   context: vi.fn(),
   memories: vi.fn(),
+  memory: vi.fn(),
   analytics: vi.fn(),
   saveText: vi.fn(),
 }));
@@ -29,6 +30,7 @@ beforeEach(() => {
     truncated: false,
   });
   mocks.memories.mockResolvedValue({ items: [], total: 0 });
+  mocks.memory.mockResolvedValue(null);
   mocks.saveText.mockResolvedValue(true);
 });
 it("exports edited context with the chosen target and source caveats", async () => {
@@ -147,6 +149,32 @@ it("offers matching memories from later pages without selecting them automatical
   expect(
     screen.queryByRole("button", { name: "Load more memories" }),
   ).not.toBeInTheDocument();
+});
+it("preselects only a memory explicitly staged by the user", async () => {
+  mocks.memory.mockResolvedValue({
+    id: "staged",
+    revision: 1,
+    title: "Staged decision",
+    body: "Keep data local",
+    scope: "global",
+    project: "",
+    agents: [],
+    tags: [],
+    created_at: "today",
+    updated_at: "today",
+    deleted_at: null,
+  });
+  render(
+    <ContextExport
+      sessionId="s"
+      initialMemoryIds={["staged"]}
+      onClose={vi.fn()}
+    />,
+  );
+  expect(
+    await screen.findByRole("checkbox", { name: "Staged decision global" }),
+  ).toBeChecked();
+  expect(mocks.memory).toHaveBeenCalledWith("staged");
 });
 it("renders empty analytics without invented data", async () => {
   mocks.analytics.mockResolvedValue({

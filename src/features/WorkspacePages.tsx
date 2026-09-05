@@ -204,6 +204,8 @@ export function SessionsPage({
   sessions,
   select,
   navigate,
+  stagedMemoryCount = 0,
+  clearStagedMemories,
 }: {
   agentFilter: string;
   setAgentFilter: (v: string) => void;
@@ -224,9 +226,23 @@ export function SessionsPage({
   sessions: Session[];
   select: (s: Session) => void;
   navigate: (p: Page) => void;
+  stagedMemoryCount?: number;
+  clearStagedMemories?: () => void;
 }) {
   return (
     <section className="panel">
+      {stagedMemoryCount > 0 && (
+        <div className="notice resource-rollback" role="status">
+          <span>
+            {stagedMemoryCount}{" "}
+            {stagedMemoryCount === 1 ? "memory is" : "memories are"} ready.
+            Choose a session, then select Continue with another agent.
+          </span>
+          <Button variant="ghost" size="sm" onClick={clearStagedMemories}>
+            Clear
+          </Button>
+        </div>
+      )}
       <div className="filters">
         <select
           aria-label="Filter by agent"
