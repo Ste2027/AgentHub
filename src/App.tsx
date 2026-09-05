@@ -42,6 +42,7 @@ import {
   McpPage,
   MarketplacePage,
 } from "./features/AgentResources";
+import { Onboarding } from "./features/Onboarding";
 
 const pages = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -106,6 +107,9 @@ export function App() {
     id: string;
     key: number;
   } | null>(null);
+  const [onboarding, setOnboarding] = useState(
+    () => desktop && localStorage.getItem("agenthub.onboarding.v1") !== "done",
+  );
   const refresh = useCallback(() => setRevision((r) => r + 1), []);
   useEffect(() => {
     if (!desktop) return;
@@ -340,6 +344,7 @@ export function App() {
               </Button>
             </div>
           )}
+          {onboarding && <Onboarding onDone={() => setOnboarding(false)} />}
           {selected ? (
             <Timeline
               key={`${selected.id}:${ordinal}`}
