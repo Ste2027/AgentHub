@@ -11,6 +11,7 @@ import {
   type MarketplaceInstall,
 } from "@/lib/marketplace";
 import { Button } from "@/components/ui/button";
+import { ActionDialog } from "@/components/ActionDialog";
 
 const SOURCE_KEY = "agenthub.marketplace.sources";
 const INSTALL_KEY = "agenthub.marketplace.installs.v1";
@@ -110,8 +111,9 @@ export function MarketplacePage({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [installReview, setInstallReview] = useState(false);
   useEffect(() => {
-    if (!desktop || (view !== "installed" && view !== "updates")) return;
+    if (!desktop) return;
     void api
       .skills()
       .then(setInstalledSkills)
@@ -174,21 +176,6 @@ export function MarketplacePage({
       );
       return;
     }
-    const conflict = installedSkills.some(
-      (skill) => skill.name === selected.name,
-    );
-    const warning = [
-      `Install ${selected.name} for ${targetAgent}?`,
-      `Destination: ${destination}`,
-      `Files: ${selected.files.length}`,
-      `Scripts: ${selected.scripts.length}`,
-      `MCP files: ${selected.mcpFiles.length}`,
-      conflict
-        ? "Conflict: a skill with this name is already discovered."
-        : "Conflict: none discovered by name.",
-      "No package script will run.",
-    ].join("\n");
-    if (!window.confirm(warning)) return;
     setLoading(true);
     setError("");
     try {
@@ -215,6 +202,7 @@ export function MarketplacePage({
       setNotice(
         `${selected.name} installed atomically. No scripts were executed.`,
       );
+      setInstallReview(false);
       setInstalledSkills(await api.skills().catch(() => installedSkills));
     } catch (cause) {
       setError(
@@ -512,9 +500,9 @@ export function MarketplacePage({
             </label>
             <Button
               disabled={!desktop || loading || !destination.trim()}
-              onClick={() => void install()}
+              onClick={() => setInstallReview(true)}
             >
-              <Download size={14} /> Preview & install
+              <Download size={14} /> Review installation
             </Button>
           </div>
           <details>
@@ -544,6 +532,38 @@ export function MarketplacePage({
           </span>
         </div>
       </div>
+      {selected && installReview && (
+        <ActionDialog
+          title={`Install ${selected.name}`}
+          description="This is the final local write review. The complete text package will be validated and installed atomically; scripts and MCP examples remain inert files."
+          confirmLabel="Install package"
+          busy={loading}
+          onClose={() => setInstallReview(false)}
+          onConfirm={() => void install()}
+        >
+          <div className="action-dialog-summary">
+            <span><strong>{targetAgent}</strong>Target agent</span>
+            <span><strong>{selected.files.length}</strong>Files</span>
+            <span><strong>{selected.scripts.length}</strong>Scripts, not run</span>
+          </div>
+          <label>
+            Exact destination
+            <input value={destination} readOnly />
+          </label>
+          <div className="action-dialog-files">
+            <strong>Exact write set</strong>
+            {selected.files.map((file) => <code key={file.path}>{file.path}</code>)}
+          </div>
+          <p className={conflict ? "warning" : "notice"}>
+            {conflict
+              ? "Conflict detected: an installed skill uses this name. AgentHub will refuse to overwrite it."
+              : "No name conflict was found among discovered skills."}
+          </p>
+          {selected.warnings.map((warning) => (
+            <p className="warning" key={warning}>{warning}</p>
+          ))}
+        </ActionDialog>
+      )}
     </section>
   );
 }

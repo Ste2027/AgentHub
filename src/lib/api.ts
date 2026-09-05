@@ -40,6 +40,8 @@ export const api = {
     call<void>("restore_skill", { path, backup }),
   copySkill: (path: string, destinationDir: string) =>
     call<string>("copy_skill", { path, destinationDir }),
+  duplicateSkill: (path: string, newName: string) =>
+    call<string>("duplicate_skill", { path, newName }),
   installSkill: (name: string, text: string, destinationDir: string) =>
     call<string>("install_skill", { name, text, destinationDir }),
   deleteSkill: (path: string) => call<string>("delete_skill", { path }),

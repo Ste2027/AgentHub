@@ -88,11 +88,12 @@ it("inspects exact skill metadata and warns about executable shell content", asy
   expect(warnings).toContain("executable or script");
   expect(warnings).toContain("shell commands");
   expect(screen.getByText(/^SKILL\.md · \d+ bytes$/)).toBeInTheDocument();
-  vi.spyOn(window, "confirm").mockReturnValue(true);
   fireEvent.change(screen.getByLabelText("Marketplace install destination"), {
     target: { value: "/synthetic/skills" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Preview & install" }));
+  fireEvent.click(screen.getByRole("button", { name: "Review installation" }));
+  expect(screen.getByRole("dialog")).toHaveTextContent("Exact write set");
+  fireEvent.click(screen.getByRole("button", { name: "Install package" }));
   await waitFor(() => expect(mocks.importSkillArchive).toHaveBeenCalled());
   const [archive, destination] = mocks.importSkillArchive.mock.calls[0];
   expect(destination).toBe("/synthetic/skills");

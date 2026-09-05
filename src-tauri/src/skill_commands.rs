@@ -301,6 +301,27 @@ pub async fn copy_skill(path: String, destination_dir: String) -> Result<String,
 }
 
 #[tauri::command]
+pub async fn duplicate_skill(path: String, new_name: String) -> Result<String, String> {
+    let source = std::path::PathBuf::from(path);
+    validate_skill_path(&source)?;
+    if !simple_name(&new_name) {
+        return Err("Skill name must be a simple portable folder name".into());
+    }
+    let source_dir = source
+        .parent()
+        .ok_or_else(|| "Skill has no parent directory".to_string())?;
+    let target = source_dir
+        .parent()
+        .ok_or_else(|| "Skill has no parent directory".to_string())?
+        .join(new_name);
+    if target.exists() {
+        return Err("A skill with this name already exists beside the source".into());
+    }
+    copy_dir(source_dir, &target)?;
+    Ok(target.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
 pub async fn install_skill(
     name: String,
     text: String,
@@ -448,6 +469,15 @@ mod tests {
         .unwrap();
         assert!(std::path::Path::new(&copied).join("SKILL.md").exists());
         assert!(std::path::Path::new(&copied)
+            .join("scripts/notes.txt")
+            .exists());
+
+        let duplicate = tauri::async_runtime::block_on(duplicate_skill(
+            skill.to_string_lossy().into_owned(),
+            "source-copy".into(),
+        ))
+        .unwrap();
+        assert!(std::path::Path::new(&duplicate)
             .join("scripts/notes.txt")
             .exists());
 

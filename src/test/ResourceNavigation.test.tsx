@@ -21,6 +21,20 @@ const mocks = vi.hoisted(() => ({
   ),
   deleteSkill: vi.fn(async () => "/synthetic/.agenthub-trash/1--target"),
   restoreDeletedSkill: vi.fn(async () => "/synthetic/target"),
+  exportSkill: vi.fn(async () =>
+    JSON.stringify({
+      format: "agenthub.skill",
+      version: 1,
+      name: "target",
+      files: [
+        { path: "SKILL.md", text: "# target" },
+        { path: "scripts/helper.ts", text: "export {};" },
+      ],
+    }),
+  ),
+  copySkill: vi.fn(async () => "/synthetic/claude/skills/target"),
+  duplicateSkill: vi.fn(async () => "/synthetic/target-copy"),
+  addMcpServer: vi.fn(async () => "/synthetic/config.json.agenthub-backup-3"),
 }));
 vi.mock("@/lib/api", () => ({ desktop: true, api: mocks }));
 const hit = {
@@ -118,6 +132,7 @@ it("moves a complete skill to AgentHub trash and restores it explicitly", async 
   vi.spyOn(window, "confirm").mockReturnValue(true);
   render(<SkillsPage />);
   fireEvent.click(await screen.findByRole("button", { name: "Remove" }));
+  fireEvent.click(screen.getByRole("button", { name: "Move to trash" }));
   expect(
     await screen.findByRole("button", { name: "Restore removed skill" }),
   ).toBeInTheDocument();
@@ -128,6 +143,55 @@ it("moves a complete skill to AgentHub trash and restores it explicitly", async 
   await waitFor(() =>
     expect(mocks.restoreDeletedSkill).toHaveBeenCalledWith(
       "/synthetic/.agenthub-trash/1--target",
+    ),
+  );
+});
+
+it("previews the complete skill package before copying it", async () => {
+  const skill: Skill = {
+    name: "target",
+    agent: "codex",
+    scope: "user",
+    path: "/synthetic/target/SKILL.md",
+    description: "Synthetic test skill",
+    readable: true,
+    modified_at: "",
+    files: ["scripts/helper.ts"],
+  };
+  mocks.skills.mockResolvedValueOnce([skill]);
+  render(<SkillsPage />);
+  fireEvent.click(await screen.findByRole("button", { name: "Copy to agent" }));
+  expect(await screen.findByRole("dialog")).toHaveTextContent("scripts/helper.ts");
+  fireEvent.change(screen.getByLabelText("Skill copy destination"), {
+    target: { value: "/synthetic/claude/skills" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Copy skill" }));
+  await waitFor(() =>
+    expect(mocks.copySkill).toHaveBeenCalledWith(
+      skill.path,
+      "/synthetic/claude/skills",
+    ),
+  );
+});
+
+it("reviews an MCP addition before creating a verified backup", async () => {
+  render(<McpPage />);
+  fireEvent.click(await screen.findByRole("button", { name: "Add server" }));
+  fireEvent.change(screen.getByLabelText("MCP configuration path"), {
+    target: { value: "/synthetic/config.json" },
+  });
+  fireEvent.change(screen.getByLabelText("MCP server name"), {
+    target: { value: "docs" },
+  });
+  fireEvent.click(
+    screen.getAllByRole("button", { name: "Add server" }).at(-1)!,
+  );
+  await waitFor(() =>
+    expect(mocks.addMcpServer).toHaveBeenCalledWith(
+      "/synthetic/config.json",
+      "docs",
+      expect.stringContaining("command"),
+      "v1",
     ),
   );
 });

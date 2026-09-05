@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { api, desktop } from "@/lib/api";
 import type { McpServer, Skill, SearchHit } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { ActionDialog } from "@/components/ActionDialog";
 import { Empty } from "@/components/Empty";
 import { saveText } from "@/lib/files";
 
@@ -27,6 +28,20 @@ function modifiedLabel(value: string): string {
   }).format(new Date(seconds * 1000));
 }
 
+function destinationForAgent(path: string, agent: "claude" | "codex") {
+  const normalized = path.replaceAll("\\", "/");
+  for (const marker of ["/.claude/skills/", "/.agents/skills/"]) {
+    const index = normalized.indexOf(marker);
+    if (index >= 0) {
+      const root = normalized.slice(0, index);
+      const target = agent === "claude" ? "/.claude/skills" : "/.agents/skills";
+      const value = `${root}${target}`;
+      return path.includes("\\") ? value.replaceAll("/", "\\") : value;
+    }
+  }
+  return "";
+}
+
 export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
   const [items, setItems] = useState<Skill[]>([]);
   const [open, setOpen] = useState<{
@@ -39,12 +54,22 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
     backup?: string;
   } | null>(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
   const [agent, setAgent] = useState("");
   const [deletedSkill, setDeletedSkill] = useState<{
     name: string;
     trash: string;
   } | null>(null);
+  const [skillAction, setSkillAction] = useState<{
+    kind: "copy" | "duplicate" | "remove";
+    skill: Skill;
+    files: string[];
+    targetAgent: "claude" | "codex";
+    destination: string;
+    newName: string;
+  } | null>(null);
+  const [actionBusy, setActionBusy] = useState(false);
   const importInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (!desktop || selection?.entity_type !== "skill" || !selection.entity_id)
@@ -218,6 +243,11 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
           {error}
         </p>
       )}
+      {notice && (
+        <p role="status" className="success">
+          {notice}
+        </p>
+      )}
       {deletedSkill && (
         <div className="notice resource-rollback">
           <span>{deletedSkill.name} is in AgentHub trash.</span>
@@ -295,31 +325,23 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    const destination = window.prompt(
-                      "Absolute destination skills directory (for example ~/.agents/skills):",
-                    );
-                    if (!destination) return;
-                    const files = [
-                      "SKILL.md",
-                      ...s.files.filter((file) => !file.endsWith("SKILL.md")),
-                    ];
-                    if (
-                      !window.confirm(
-                        `Copy ${s.name} to ${destination}?\n\nFiles to create:\n${files.join("\n")}\n\nCompatibility: verify manually for the target agent. No transformations will be applied.`,
-                      )
-                    )
-                      return;
-                    api
-                      .copySkill(s.path, destination)
-                      .then(() => reloadSkills())
-                      .catch((e) =>
-                        setError(
-                          e instanceof Error
-                            ? e.message
-                            : "Could not copy this skill.",
-                        ),
-                      );
+                  onClick={async () => {
+                    try {
+                      const archive = JSON.parse(await api.exportSkill(s.path)) as {
+                        files: { path: string }[];
+                      };
+                      const targetAgent = s.agent === "claude" ? "codex" : "claude";
+                      setSkillAction({
+                        kind: "copy",
+                        skill: s,
+                        files: archive.files.map((file) => file.path),
+                        targetAgent,
+                        destination: destinationForAgent(s.path, targetAgent),
+                        newName: `${s.name}-copy`,
+                      });
+                    } catch (e) {
+                      setError(e instanceof Error ? e.message : "Could not inspect this skill.");
+                    }
                   }}
                 >
                   Copy to agent
@@ -327,23 +349,32 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    if (!window.confirm(`Move ${s.name} to AgentHub trash?`))
-                      return;
-                    api
-                      .deleteSkill(s.path)
-                      .then((trash) => {
-                        setDeletedSkill({ name: s.name, trash });
-                        return reloadSkills();
-                      })
-                      .catch((e) =>
-                        setError(
-                          e instanceof Error
-                            ? e.message
-                            : "Could not remove this skill.",
-                        ),
-                      );
-                  }}
+                  onClick={() =>
+                    setSkillAction({
+                      kind: "duplicate",
+                      skill: s,
+                      files: ["SKILL.md", ...s.files],
+                      targetAgent: s.agent === "claude" ? "claude" : "codex",
+                      destination: "",
+                      newName: `${s.name}-copy`,
+                    })
+                  }
+                >
+                  Duplicate
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    setSkillAction({
+                      kind: "remove",
+                      skill: s,
+                      files: ["SKILL.md", ...s.files],
+                      targetAgent: s.agent === "claude" ? "claude" : "codex",
+                      destination: "",
+                      newName: "",
+                    })
+                  }
                 >
                   Remove
                 </Button>
@@ -460,6 +491,112 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
           )}
         </div>
       )}
+      {skillAction && (
+        <ActionDialog
+          title={
+            skillAction.kind === "copy"
+              ? `Copy ${skillAction.skill.name}`
+              : skillAction.kind === "duplicate"
+                ? `Duplicate ${skillAction.skill.name}`
+                : `Remove ${skillAction.skill.name}`
+          }
+          description={
+            skillAction.kind === "copy"
+              ? "Review the complete package and target before creating files for another agent. No content is transformed or executed."
+              : skillAction.kind === "duplicate"
+                ? "Create a complete sibling copy. Existing folders are never overwritten."
+                : "The complete folder will move to AgentHub trash and can be restored."
+          }
+          confirmLabel={
+            skillAction.kind === "copy"
+              ? "Copy skill"
+              : skillAction.kind === "duplicate"
+                ? "Create duplicate"
+                : "Move to trash"
+          }
+          danger={skillAction.kind === "remove"}
+          busy={actionBusy}
+          onClose={() => setSkillAction(null)}
+          onConfirm={async () => {
+            setActionBusy(true);
+            setError("");
+            try {
+              if (skillAction.kind === "copy") {
+                if (!skillAction.destination.trim())
+                  throw Error("Choose an absolute local destination directory.");
+                await api.copySkill(skillAction.skill.path, skillAction.destination.trim());
+                setNotice(`${skillAction.skill.name} copied for ${skillAction.targetAgent === "claude" ? "Claude Code" : "OpenAI Codex"}.`);
+              } else if (skillAction.kind === "duplicate") {
+                await api.duplicateSkill(skillAction.skill.path, skillAction.newName.trim());
+                setNotice(`${skillAction.skill.name} duplicated as ${skillAction.newName.trim()}.`);
+              } else {
+                const trash = await api.deleteSkill(skillAction.skill.path);
+                setDeletedSkill({ name: skillAction.skill.name, trash });
+              }
+              setSkillAction(null);
+              await reloadSkills();
+            } catch (e) {
+              setError(e instanceof Error ? e.message : "Could not apply this skill change.");
+            } finally {
+              setActionBusy(false);
+            }
+          }}
+        >
+          {skillAction.kind === "copy" && (
+            <>
+              <div className="action-dialog-summary">
+                <span><strong>{skillAction.files.length}</strong>Files</span>
+                <span><strong>{skillAction.skill.agent}</strong>Source agent</span>
+                <span><strong>No scripts</strong>will be run</span>
+              </div>
+              <label>
+                Target agent
+                <select
+                  value={skillAction.targetAgent}
+                  onChange={(event) => {
+                    const targetAgent = event.target.value as "claude" | "codex";
+                    setSkillAction({
+                      ...skillAction,
+                      targetAgent,
+                      destination: destinationForAgent(skillAction.skill.path, targetAgent),
+                    });
+                  }}
+                >
+                  <option value="codex">OpenAI Codex</option>
+                  <option value="claude">Claude Code</option>
+                </select>
+              </label>
+              <label>
+                Destination skills directory
+                <input
+                  aria-label="Skill copy destination"
+                  value={skillAction.destination}
+                  onChange={(event) => setSkillAction({ ...skillAction, destination: event.target.value })}
+                />
+              </label>
+            </>
+          )}
+          {skillAction.kind === "duplicate" && (
+            <label>
+              New skill name
+              <input
+                aria-label="Duplicate skill name"
+                value={skillAction.newName}
+                onChange={(event) => setSkillAction({ ...skillAction, newName: event.target.value })}
+              />
+            </label>
+          )}
+          <div className="action-dialog-files">
+            <strong>Exact file set</strong>
+            {skillAction.files.map((file) => <code key={file}>{file}</code>)}
+          </div>
+          <p className="notice">
+            {skillAction.kind === "remove"
+              ? "This is reversible from the Skills page until the trash entry is replaced."
+              : "AgentHub validates every path and refuses conflicts before writing."}
+          </p>
+        </ActionDialog>
+      )}
     </section>
   );
 }
@@ -483,6 +620,16 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
     backup: string;
   } | null>(null);
   const [notice, setNotice] = useState("");
+  const [mcpAction, setMcpAction] = useState<{
+    kind: "add" | "duplicate" | "copy" | "toggle" | "remove";
+    server?: McpServer;
+    path: string;
+    name: string;
+    newName: string;
+    config: string;
+    destination: string;
+  } | null>(null);
+  const [actionBusy, setActionBusy] = useState(false);
   useEffect(() => {
     if (!desktop || selection?.entity_type !== "mcp" || !selection.entity_id)
       return;
@@ -553,40 +700,16 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
         <span className="badge">{items.length} discovered</span>
         <Button
           variant="outline"
-          onClick={async () => {
-            const path = window.prompt(
-              "Absolute JSON or TOML MCP config path to update:",
-            );
-            const name = path && window.prompt("New server name:");
-            const config =
-              name &&
-              window.prompt(
-                'Server JSON, for example {"command":"npx","args":[]}',
-              );
-            if (
-              !path ||
-              !name ||
-              !config ||
-                  !window.confirm(`Add ${name} to this MCP configuration?`)
-            )
-              return;
-            try {
-              const file = await api.mcpConfig(path);
-              const backup = await api.addMcpServer(
-                path,
-                name,
-                config,
-                file.hash,
-              );
-              rememberBackup(path, backup);
-              setNotice(`${name} added. A restorable backup was created.`);
-              await reloadMcp();
-            } catch (e) {
-              setError(
-                e instanceof Error ? e.message : "Could not add this server.",
-              );
-            }
-          }}
+          onClick={() =>
+            setMcpAction({
+              kind: "add",
+              path: items[0]?.config_path ?? "",
+              name: "",
+              newName: "",
+              config: '{\n  "command": "npx",\n  "args": []\n}',
+              destination: "",
+            })
+          }
         >
           Add server
         </Button>
@@ -715,128 +838,68 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={async () => {
-                  const newName = window.prompt(`Duplicate ${s.name} as:`);
-                  if (
-                    !newName ||
-                    !window.confirm(`Duplicate ${s.name} as ${newName}?`)
-                  )
-                    return;
-                  try {
-                    const file = await api.mcpConfig(s.config_path);
-                    const backup = await api.duplicateMcpServer(
-                      s.config_path,
-                      s.name,
-                      newName,
-                      file.hash,
-                    );
-                    rememberBackup(s.config_path, backup);
-                    setNotice(`${s.name} duplicated as ${newName}.`);
-                    await reloadMcp();
-                  } catch (e) {
-                    setError(
-                      e instanceof Error
-                        ? e.message
-                        : "Could not duplicate this server.",
-                    );
-                  }
-                }}
+                onClick={() =>
+                  setMcpAction({
+                    kind: "duplicate",
+                    server: s,
+                    path: s.config_path,
+                    name: s.name,
+                    newName: `${s.name}-copy`,
+                    config: "",
+                    destination: "",
+                  })
+                }
               >
                 Duplicate
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={async () => {
-                  const destination = window.prompt(
-                    "Absolute destination JSON or TOML config path for this server:",
-                  );
-                  if (
-                    !destination ||
-                    !window.confirm(`Copy ${s.name} to ${destination}?`)
-                  )
-                    return;
-                  try {
-                    const backup = await api.copyMcpServer(
-                      s.config_path,
-                      s.name,
-                      destination,
-                    );
-                    rememberBackup(destination, backup);
-                    setNotice(
-                      "MCP server copied. Reopen the target agent to load its config.",
-                    );
-                  } catch (e) {
-                    setError(
-                      e instanceof Error
-                        ? e.message
-                        : "Could not copy this server.",
-                    );
-                  }
-                }}
+                onClick={() =>
+                  setMcpAction({
+                    kind: "copy",
+                    server: s,
+                    path: s.config_path,
+                    name: s.name,
+                    newName: "",
+                    config: "",
+                    destination: "",
+                  })
+                }
               >
                 Copy to agent
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={async () => {
-                  if (
-                    !window.confirm(
-                      `${s.enabled ? "Disable" : "Enable"} ${s.name}?`,
-                    )
-                  )
-                    return;
-                  try {
-                    const file = await api.mcpConfig(s.config_path);
-                    const backup = await api.setMcpEnabled(
-                      s.config_path,
-                      s.name,
-                      !s.enabled,
-                      file.hash,
-                    );
-                    rememberBackup(s.config_path, backup);
-                    setNotice(
-                      `${s.name} ${s.enabled ? "disabled" : "enabled"}.`,
-                    );
-                    await reloadMcp();
-                  } catch (e) {
-                    setError(
-                      e instanceof Error
-                        ? e.message
-                        : "Could not change this server.",
-                    );
-                  }
-                }}
+                onClick={() =>
+                  setMcpAction({
+                    kind: "toggle",
+                    server: s,
+                    path: s.config_path,
+                    name: s.name,
+                    newName: "",
+                    config: "",
+                    destination: "",
+                  })
+                }
               >
                 {s.enabled ? "Disable" : "Enable"}
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={async () => {
-                  if (!window.confirm(`Remove ${s.name} from this MCP config?`))
-                    return;
-                  try {
-                    const file = await api.mcpConfig(s.config_path);
-                    const backup = await api.removeMcpServer(
-                      s.config_path,
-                      s.name,
-                      file.hash,
-                    );
-                    rememberBackup(s.config_path, backup);
-                    setNotice(
-                      `${s.name} removed. You can roll back this change.`,
-                    );
-                    await reloadMcp();
-                  } catch (e) {
-                    setError(
-                      e instanceof Error
-                        ? e.message
-                        : "Could not remove this server.",
-                    );
-                  }
-                }}
+                onClick={() =>
+                  setMcpAction({
+                    kind: "remove",
+                    server: s,
+                    path: s.config_path,
+                    name: s.name,
+                    newName: "",
+                    config: "",
+                    destination: "",
+                  })
+                }
               >
                 Remove
               </Button>
@@ -963,6 +1026,171 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
             <pre>{open.text}</pre>
           )}
         </div>
+      )}
+      {mcpAction && (
+        <ActionDialog
+          title={
+            mcpAction.kind === "add"
+              ? "Add MCP server"
+              : mcpAction.kind === "duplicate"
+                ? `Duplicate ${mcpAction.name}`
+                : mcpAction.kind === "copy"
+                  ? `Copy ${mcpAction.name}`
+                  : mcpAction.kind === "toggle"
+                    ? `${mcpAction.server?.enabled ? "Disable" : "Enable"} ${mcpAction.name}`
+                    : `Remove ${mcpAction.name}`
+          }
+          description="Review the exact target and change. AgentHub creates a backup, writes atomically, parses the result again and rolls back automatically if validation fails."
+          confirmLabel={
+            mcpAction.kind === "add"
+              ? "Add server"
+              : mcpAction.kind === "duplicate"
+                ? "Create duplicate"
+                : mcpAction.kind === "copy"
+                  ? "Copy server"
+                  : mcpAction.kind === "toggle"
+                    ? mcpAction.server?.enabled
+                      ? "Disable server"
+                      : "Enable server"
+                    : "Remove server"
+          }
+          danger={mcpAction.kind === "remove"}
+          busy={actionBusy}
+          onClose={() => setMcpAction(null)}
+          onConfirm={async () => {
+            setActionBusy(true);
+            setError("");
+            try {
+              let backup: string;
+              if (mcpAction.kind === "copy") {
+                if (!mcpAction.destination.trim())
+                  throw Error("Choose an absolute JSON or TOML destination path.");
+                backup = await api.copyMcpServer(
+                  mcpAction.path,
+                  mcpAction.name,
+                  mcpAction.destination.trim(),
+                );
+                rememberBackup(mcpAction.destination.trim(), backup);
+                setNotice(`${mcpAction.name} copied. Reopen the target agent to load it.`);
+              } else {
+                if (!mcpAction.path.trim())
+                  throw Error("Choose an absolute JSON or TOML configuration path.");
+                const file = await api.mcpConfig(mcpAction.path);
+                if (mcpAction.kind === "add") {
+                  backup = await api.addMcpServer(
+                    mcpAction.path,
+                    mcpAction.name.trim(),
+                    mcpAction.config,
+                    file.hash,
+                  );
+                  setNotice(`${mcpAction.name.trim()} added and verified.`);
+                } else if (mcpAction.kind === "duplicate") {
+                  backup = await api.duplicateMcpServer(
+                    mcpAction.path,
+                    mcpAction.name,
+                    mcpAction.newName.trim(),
+                    file.hash,
+                  );
+                  setNotice(`${mcpAction.name} duplicated as ${mcpAction.newName.trim()}.`);
+                } else if (mcpAction.kind === "toggle") {
+                  backup = await api.setMcpEnabled(
+                    mcpAction.path,
+                    mcpAction.name,
+                    !mcpAction.server!.enabled,
+                    file.hash,
+                  );
+                  setNotice(`${mcpAction.name} ${mcpAction.server!.enabled ? "disabled" : "enabled"}.`);
+                } else {
+                  backup = await api.removeMcpServer(
+                    mcpAction.path,
+                    mcpAction.name,
+                    file.hash,
+                  );
+                  setNotice(`${mcpAction.name} removed. The change can be rolled back.`);
+                }
+                rememberBackup(mcpAction.path, backup);
+              }
+              setMcpAction(null);
+              await reloadMcp();
+            } catch (e) {
+              setError(e instanceof Error ? e.message : "Could not apply this MCP change.");
+            } finally {
+              setActionBusy(false);
+            }
+          }}
+        >
+          {mcpAction.kind === "add" && (
+            <>
+              <label>
+                Existing MCP configuration
+                <input
+                  aria-label="MCP configuration path"
+                  placeholder="Absolute .json or .toml path"
+                  value={mcpAction.path}
+                  onChange={(event) => setMcpAction({ ...mcpAction, path: event.target.value })}
+                />
+              </label>
+              <label>
+                Server name
+                <input
+                  aria-label="MCP server name"
+                  value={mcpAction.name}
+                  onChange={(event) => setMcpAction({ ...mcpAction, name: event.target.value })}
+                />
+              </label>
+              <label>
+                Server configuration as JSON
+                <textarea
+                  aria-label="MCP server configuration"
+                  rows={6}
+                  value={mcpAction.config}
+                  onChange={(event) => setMcpAction({ ...mcpAction, config: event.target.value })}
+                />
+              </label>
+            </>
+          )}
+          {mcpAction.kind === "duplicate" && (
+            <label>
+              New server name
+              <input
+                aria-label="Duplicate MCP server name"
+                value={mcpAction.newName}
+                onChange={(event) => setMcpAction({ ...mcpAction, newName: event.target.value })}
+              />
+            </label>
+          )}
+          {mcpAction.kind === "copy" && (
+            <label>
+              Destination MCP configuration
+              <input
+                aria-label="MCP copy destination"
+                placeholder="Absolute .json or .toml path"
+                value={mcpAction.destination}
+                onChange={(event) => setMcpAction({ ...mcpAction, destination: event.target.value })}
+              />
+            </label>
+          )}
+          <div className="action-dialog-summary">
+            <span><strong>{mcpAction.server?.agent ?? "New"}</strong>Agent</span>
+            <span><strong>{mcpAction.path.endsWith(".toml") ? "TOML" : "JSON"}</strong>Format</span>
+            <span><strong>Automatic</strong>Rollback</span>
+          </div>
+          <div className="action-dialog-files">
+            <strong>Change preview</strong>
+            <code>
+              {mcpAction.kind === "add"
+                ? `+ ${mcpAction.name || "server-name"}`
+                : mcpAction.kind === "duplicate"
+                  ? `+ ${mcpAction.newName}`
+                  : mcpAction.kind === "copy"
+                    ? `+ ${mcpAction.name} → ${mcpAction.destination || "destination"}`
+                    : mcpAction.kind === "toggle"
+                      ? `${mcpAction.server?.enabled ? "enabled: true → false" : "enabled: false → true"}`
+                      : `- ${mcpAction.name}`}
+            </code>
+          </div>
+          <p className="notice">Sensitive environment values remain masked in normal previews.</p>
+        </ActionDialog>
       )}
     </section>
   );

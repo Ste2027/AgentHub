@@ -1102,6 +1102,116 @@ select {
 .compatibility-panel tbody tr:last-child > * {
   border-bottom: 0;
 }
+.action-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(5, 7, 9, 0.72);
+  backdrop-filter: blur(10px);
+}
+.action-dialog {
+  width: min(680px, 100%);
+  max-height: min(760px, calc(100vh - 48px));
+  overflow: auto;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, var(--accent));
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.44);
+}
+.action-dialog > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 25px 26px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.action-dialog > header h2 {
+  margin: 7px 0 6px;
+  font-size: 21px;
+}
+.action-dialog > header p {
+  max-width: 540px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.action-dialog > header > button {
+  display: grid;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  background: transparent;
+}
+.action-dialog-content {
+  display: grid;
+  gap: 16px;
+  padding: 22px 26px;
+}
+.action-dialog-content label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.action-dialog-content input,
+.action-dialog-content select,
+.action-dialog-content textarea {
+  width: 100%;
+}
+.action-dialog-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+.action-dialog-summary span {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.action-dialog-summary strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text);
+  font-size: 12px;
+}
+.action-dialog-files {
+  max-height: 190px;
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--input);
+}
+.action-dialog-files code {
+  display: block;
+  margin: 5px 0;
+  color: var(--muted);
+}
+.action-dialog > footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  padding: 17px 26px 22px;
+  border-top: 1px solid var(--border);
+}
+.danger-action {
+  color: #190b09 !important;
+  background: #dc806c !important;
+}
+@media (max-width: 620px) {
+  .action-dialog-backdrop { padding: 10px; }
+  .action-dialog-summary { grid-template-columns: 1fr; }
+}
 .roadmap-note {
   padding: 23px;
   margin-top: 20px;

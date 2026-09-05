@@ -164,6 +164,7 @@ pub fn run() {
             crate::skill_commands::save_skill,
             crate::skill_commands::restore_skill,
             crate::skill_commands::copy_skill,
+            crate::skill_commands::duplicate_skill,
             crate::skill_commands::install_skill,
             crate::skill_commands::delete_skill,
             crate::skill_commands::restore_deleted_skill,
