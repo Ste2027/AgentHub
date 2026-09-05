@@ -28,8 +28,8 @@ You remember solving the problem. You do not remember which agent, project or co
 | Memories         | Global/project/agent notes with tags, search, revisions, trash, import/export and associations              |
 | Activity         | Truthful local counts for sessions, events, models, tools, file/shell requests and recorded errors          |
 | Context export   | Editable compact handoff with task, decisions, files, commands, errors and TODOs                            |
-| Skills/MCP       | Discovery, SKILL.md review/editing and review-only MCP configuration for Claude/Codex; secrets stay hidden  |
-| Marketplace      | Opt-in browsing of public GitHub skill repositories, source list, catalog search and remote SKILL.md review |
+| Skills/MCP       | Discovery, metadata, search/filter, SKILL.md review/edit/save/copy/remove and safe MCP JSON review/edit; secrets stay hidden |
+| Marketplace      | Opt-in browsing of public GitHub skill repositories, source list, catalog search, exact SKILL.md review and explicit install |
 | Privacy          | Read-only source access; a local SQLite index; no account, telemetry or inference API                       |
 
 There are no simulated charts, fabricated success rates or automatic agent commands. Skill edits, copies, installs and JSON MCP edits require an explicit confirmation, create a backup where applicable and use atomic replacement with stale-file detection.
