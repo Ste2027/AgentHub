@@ -1,0 +1,7 @@
+name: Feature request
+description: Suggest an improvement
+body:
+  - type: textarea
+    id: idea
+    attributes: { label: Proposal, description: Explain the local-first workflow it enables. }
+    validations: { required: true }
