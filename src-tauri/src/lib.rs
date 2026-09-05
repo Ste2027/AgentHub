@@ -2,6 +2,17 @@ pub mod adapters;
 pub mod database;
 #[cfg(feature = "desktop")]
 pub mod desktop;
+pub mod exports;
 pub mod indexer;
+pub mod insights;
+pub mod mcp;
+#[cfg(feature = "desktop")]
+pub mod mcp_commands;
+pub mod memories;
+#[cfg(feature = "desktop")]
+pub mod memory_commands;
 pub mod models;
 pub mod paths;
+#[cfg(feature = "desktop")]
+pub mod skill_commands;
+pub mod skills;

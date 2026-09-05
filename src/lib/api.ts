@@ -1,4 +1,6 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
+import type { Analytics, SessionContext, Skill, McpServer } from "./types";
+import type { Memory, MemoryDraft, MemoryPage, ImportResult } from "./types";
 import type {
   IndexProgress,
   Overview,
@@ -19,6 +21,23 @@ function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
   return invoke<T>(command, args);
 }
 export const api = {
+  analytics: () => call<Analytics>("get_analytics"),
+  skills: () => call<Skill[]>("list_skills"),
+  mcpServers: () => call<McpServer[]>("list_mcp_servers"),
+  context: (sessionId: string) =>
+    call<SessionContext>("session_context", { sessionId }),
+  memories: (query = "", scope = "", trash = false, offset = 0) =>
+    call<MemoryPage>("list_memories", { query, scope, trash, offset }),
+  memory: (id: string) => call<Memory | null>("get_memory", { id }),
+  saveMemory: (draft: MemoryDraft) => call<Memory>("save_memory", { draft }),
+  trashMemory: (id: string, revision: number, restore = false) =>
+    call<void>("trash_memory", { id, revision, restore }),
+  exportMemories: (ids: string[] = []) =>
+    call<string>("export_memories", { ids }),
+  importMemories: (json: string) =>
+    call<ImportResult>("import_memories", { json }),
+  writeExport: (path: string, text: string) =>
+    call<void>("write_export", { path, text }),
   session: (sessionId: string) =>
     call<Session | null>("get_session", { sessionId }),
   overview: () => call<Overview>("overview"),

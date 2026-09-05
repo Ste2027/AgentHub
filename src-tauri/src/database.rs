@@ -22,12 +22,18 @@ impl Database {
             .conn
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(|e| e.to_string())?;
-        if version > 1 {
+        if version > 2 {
             return Err("Database is from a newer AgentHub version".into());
         }
         if version == 0 {
             let tx = self.conn.transaction().map_err(|e| e.to_string())?;
             tx.execute_batch(include_str!("../migrations/001_initial.sql"))
+                .map_err(|e| e.to_string())?;
+            tx.commit().map_err(|e| e.to_string())?;
+        }
+        if version < 2 {
+            let tx = self.conn.transaction().map_err(|e| e.to_string())?;
+            tx.execute_batch(include_str!("../migrations/002_memories.sql"))
                 .map_err(|e| e.to_string())?;
             tx.commit().map_err(|e| e.to_string())?;
         }
@@ -175,6 +181,8 @@ impl Database {
         let rows = stmt
             .query_map([terms.join(" AND ")], |r| {
                 Ok(SearchHit {
+                    entity_type: "session".into(),
+                    entity_id: r.get(0)?,
                     session_id: r.get(0)?,
                     title: r.get(1)?,
                     agent: r.get(2)?,
@@ -185,8 +193,12 @@ impl Database {
                 })
             })
             .map_err(|e| e.to_string())?;
-        rows.collect::<rusqlite::Result<_>>()
-            .map_err(|e| e.to_string())
+        let mut results: Vec<SearchHit> = rows
+            .collect::<rusqlite::Result<_>>()
+            .map_err(|e| e.to_string())?;
+        results.truncate(40);
+        results.extend(self.search_memories(&terms.join(" AND "))?);
+        Ok(results)
     }
     pub fn projects(&self) -> Result<Vec<Project>> {
         let mut stmt = self.conn.prepare("SELECT project,count(*),group_concat(DISTINCT agent),max(updated_at) FROM sessions WHERE project<>'' GROUP BY project ORDER BY max(updated_at) DESC").map_err(|e|e.to_string())?;

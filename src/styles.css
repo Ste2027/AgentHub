@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./features/memories/memories.css";
 @theme {
   --font-sans: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -1219,5 +1220,82 @@ select {
   *:after {
     animation: none !important;
     transition: none !important;
+  }
+}
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+.metric-card,
+.analytics-comparison {
+  padding: 24px;
+  min-width: 0;
+}
+.analytics-note {
+  color: var(--muted);
+  margin: 20px 0;
+}
+.metric-card h2,
+.analytics-comparison h2 {
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+.metric-card ol {
+  list-style: none;
+  padding: 0;
+}
+.metric-card li {
+  margin: 16px 0;
+}
+.metric-card li > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+.metric-card li span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.metric-track {
+  height: 4px;
+  background: var(--border);
+  margin-top: 8px;
+  border-radius: 4px;
+}
+.metric-track > span {
+  display: block;
+  height: 100%;
+  background: #9c8aff;
+  border-radius: 4px;
+}
+.metric-empty {
+  padding: 24px 0;
+  color: var(--muted);
+}
+.analytics-comparison {
+  overflow: auto;
+}
+.analytics-comparison table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.analytics-comparison th,
+.analytics-comparison td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.context-editor details pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 420px;
+  overflow: auto;
+}
+@media (max-width: 900px) {
+  .analytics-grid {
+    grid-template-columns: 1fr;
   }
 }

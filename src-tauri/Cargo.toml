@@ -16,19 +16,20 @@ required-features = ["desktop"]
 
 [features]
 default = []
-desktop = ["dep:tauri", "dep:tauri-build"]
+desktop = ["dep:tauri", "dep:tauri-build", "dep:tauri-plugin-dialog"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+toml = "0.8"
 rusqlite = { version = "0.32", features = ["bundled"] }
 walkdir = "2"
 sha2 = "0.10"
 dirs = "6"
+uuid = { version = "1", features = ["v4"] }
+tempfile = "3"
+tauri-plugin-dialog = { version = "2", optional = true }
 tauri = { version = "2", optional = true , features = [] }
 
 [build-dependencies]
 tauri-build = { version = "2", optional = true , features = [] }
-
-[dev-dependencies]
-tempfile = "3"

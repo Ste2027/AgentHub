@@ -18,6 +18,8 @@ import {
   ShieldCheck,
   Database,
   ChevronRight,
+  Brain,
+  BarChart3,
 } from "lucide-react";
 import { api, desktop } from "./lib/api";
 import type {
@@ -33,15 +35,24 @@ import { Button } from "./components/ui/button";
 import { Timeline } from "./features/Timeline";
 import { Search } from "./features/Search";
 import { Settings } from "./features/Settings";
+import { MemoryLibrary } from "./features/memories/MemoryLibrary";
+import { Analytics } from "./features/Analytics";
 
 const pages = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "sessions", label: "Sessions", icon: MessagesSquare },
   { id: "projects", label: "Projects", icon: FolderGit2 },
+  { id: "memories", label: "Memories", icon: Brain },
+  { id: "analytics", label: "Activity", icon: BarChart3 },
   { id: "agents", label: "Agents", icon: Cpu },
   { id: "settings", label: "Settings", icon: SlidersHorizontal },
 ] as const;
 const headings: Record<Page, [string, string]> = {
+  analytics: ["Local activity", "Understand the work recorded by your agents."],
+  memories: [
+    "Memories",
+    "Keep the decisions and context worth carrying forward.",
+  ],
   overview: [
     "Your agents. One workspace.",
     "A little less searching. A lot more context.",
@@ -73,6 +84,11 @@ export function App() {
   const [projectFilter, setProjectFilter] = useState("");
   const [offset, setOffset] = useState(0);
   const [revision, setRevision] = useState(0);
+  const [memoryDirty, setMemoryDirty] = useState(false);
+  const [memorySelection, setMemorySelection] = useState<{
+    id: string;
+    key: number;
+  } | null>(null);
   const refresh = useCallback(() => setRevision((r) => r + 1), []);
   useEffect(() => {
     if (!desktop) return;
@@ -139,6 +155,10 @@ export function App() {
     };
   }, []);
   const navigate = (next: Page) => {
+    if (memoryDirty && !window.confirm("Discard unsaved memory changes?"))
+      return;
+    setMemoryDirty(false);
+    setMemorySelection(null);
     setPage(next);
     setSelected(null);
     setOffset(0);
@@ -164,6 +184,18 @@ export function App() {
     setPage("sessions");
   }
   async function selectHit(hit: SearchHit) {
+    if (memoryDirty && !window.confirm("Discard unsaved memory changes?"))
+      return;
+    setMemoryDirty(false);
+    if (hit.entity_type === "memory" && hit.entity_id) {
+      setSelected(null);
+      setPage("memories");
+      setMemorySelection((old) => ({
+        id: hit.entity_id!,
+        key: (old?.key ?? 0) + 1,
+      }));
+      return;
+    }
     try {
       const found = await api.session(hit.session_id);
       if (found) {
@@ -301,7 +333,7 @@ export function App() {
                   <h1>{headings[page][0]}</h1>
                   <p>{headings[page][1]}</p>
                 </div>
-                {page !== "settings" && (
+                {page !== "settings" && page !== "memories" && (
                   <Button
                     onClick={() => void index()}
                     disabled={!desktop || busy}
@@ -380,6 +412,15 @@ export function App() {
                   busy={busy}
                 />
               )}
+              {page === "memories" && (
+                <MemoryLibrary
+                  key={memorySelection?.key ?? "library"}
+                  initialId={memorySelection?.id}
+                  projects={projects}
+                  onDirty={setMemoryDirty}
+                />
+              )}
+              {page === "analytics" && <Analytics revision={revision} />}
             </>
           )}
         </div>

@@ -9,7 +9,7 @@ pub struct AppState {
     db: Arc<Mutex<Database>>,
     path: PathBuf,
 }
-async fn with_db<T: Send + 'static>(
+pub(crate) async fn with_db<T: Send + 'static>(
     state: &AppState,
     f: impl FnOnce(&mut Database) -> Result<T, String> + Send + 'static,
 ) -> Result<T, String> {
@@ -20,6 +20,17 @@ async fn with_db<T: Send + 'static>(
     })
     .await
     .map_err(|e| e.to_string())?
+}
+#[tauri::command]
+async fn get_analytics(state: State<'_, AppState>) -> Result<crate::insights::Analytics, String> {
+    with_db(&state, |db| db.analytics()).await
+}
+#[tauri::command]
+async fn session_context(
+    state: State<'_, AppState>,
+    session_id: String,
+) -> Result<crate::insights::SessionContext, String> {
+    with_db(&state, move |db| db.session_context(&session_id)).await
 }
 #[tauri::command]
 async fn overview(state: State<'_, AppState>) -> Result<Overview, String> {
@@ -84,6 +95,7 @@ async fn index_sessions(
 }
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let dir = match std::env::var_os("AGENTHUB_DATA_DIR") {
                 Some(value) => {
@@ -107,6 +119,17 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            get_analytics,
+            session_context,
+            crate::memory_commands::list_memories,
+            crate::memory_commands::get_memory,
+            crate::memory_commands::save_memory,
+            crate::memory_commands::trash_memory,
+            crate::memory_commands::export_memories,
+            crate::memory_commands::import_memories,
+            crate::memory_commands::write_export,
+            crate::skill_commands::list_skills,
+            crate::mcp_commands::list_mcp_servers,
             overview,
             get_settings,
             save_settings,

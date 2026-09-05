@@ -86,7 +86,10 @@ export function Search({
                   <span>
                     <strong>{hit.title}</strong>
                     <small>
-                      {basename(hit.project)} · {hit.agent} ·{" "}
+                      {hit.entity_type === "memory"
+                        ? "Memory library"
+                        : basename(hit.project)}
+                      {hit.agent && ` · ${hit.agent}`} ·{" "}
                       {hit.kind.replaceAll("_", " ")}
                     </small>
                     <p>{hit.text}</p>

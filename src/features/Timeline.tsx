@@ -10,6 +10,7 @@ import { api } from "@/lib/api";
 import type { Session, TimelineEvent } from "@/lib/types";
 import { basename, date, errorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ContextExport } from "./ContextExport";
 export function Timeline({
   session,
   initialOrdinal = 0,
@@ -23,6 +24,7 @@ export function Timeline({
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -42,10 +44,20 @@ export function Timeline({
       active = false;
     };
   }, [session.id, offset]);
+  if (exporting)
+    return (
+      <ContextExport
+        sessionId={session.id}
+        onClose={() => setExporting(false)}
+      />
+    );
   return (
     <section>
       <Button variant="ghost" onClick={onBack}>
         <ArrowLeft size={16} /> Back to sessions
+      </Button>
+      <Button variant="outline" onClick={() => setExporting(true)}>
+        Continue with another agent
       </Button>
       <div className="detail-heading">
         <span className="eyebrow">SESSION TIMELINE</span>

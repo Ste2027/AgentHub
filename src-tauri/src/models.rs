@@ -53,6 +53,8 @@ pub struct Project {
 }
 #[derive(Debug, Serialize)]
 pub struct SearchHit {
+    pub entity_type: String,
+    pub entity_id: String,
     pub session_id: String,
     pub title: String,
     pub agent: String,

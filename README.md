@@ -25,9 +25,13 @@ You remember solving the problem. You do not remember which agent, project or co
 | Indexing         | Manual incremental scans, unchanged-file skipping, per-file transactions, progress and import diagnostics |
 | Agent paths      | Automatic directory detection and persistent absolute-path overrides                                      |
 | Appearance       | Dark by default; optional light theme; keyboard-accessible search dialog                                  |
+| Memories         | Global/project/agent notes with tags, search, revisions, trash, import/export and associations              |
+| Activity         | Truthful local counts for sessions, events, models, tools, file/shell requests and recorded errors       |
+| Context export   | Editable compact handoff with task, decisions, files, commands, errors and TODOs                         |
+| Skills/MCP       | Read-only discovery and review for Claude/Codex local configuration; secrets are never displayed          |
 | Privacy          | Read-only source access; a local SQLite index; no account, telemetry or inference API                     |
 
-Memories, skills and MCP management are part of the product roadmap. They are **not implemented** in this MVP. There are no simulated charts, fabricated success rates or fake controls for those features.
+There are no simulated charts, fabricated success rates or automatic agent commands. Skills and MCP edits remain disabled until safe preview, backup and rollback flows are completed.
 
 ## Supported agents
 
@@ -143,7 +147,7 @@ The GitHub Actions workflow runs these checks and a Windows desktop build. No pr
 - Indexing is manual; changed files are fully reparsed. Metadata fingerprints track file size and nanosecond modification time. Use **Rebuild index** when a tool preserves both while rewriting content.
 - Import limit: 128 MiB per file, 8 MiB per line, directory depth 20; symbolic links are not followed. Malformed/oversized lines are counted, and failed files are reported.
 - Unsupported record types, media, encrypted reasoning, token analytics and provider-specific UI events are not interpreted.
-- Search uses literal token matching, not semantic search; up to 80 hits are returned. Multiple words must occur in the same indexed event (or session metadata row). It does not search future memory/skill/MCP features.
+- Search uses literal token matching, not semantic search; up to 80 session and 40 memory hits are returned. Skills and MCP configuration are reviewable in Agents but are not yet part of the FTS index.
 - Project discovery uses recorded paths and checks for `.git`; it does not crawl arbitrary repositories or infer frameworks.
 - Windows UNC/device paths are not probed or accepted as agent directories. Project paths remain visible as transcript data even when local Git detection is unavailable.
 - Session identity includes provider and source path. Copies moved to another source path appear as separate archived sessions.
@@ -152,8 +156,8 @@ The GitHub Actions workflow runs these checks and a Windows desktop build. No pr
 ## Roadmap
 
 - **Phase 1:** harden Claude/Codex format coverage, large-history responsiveness and native integration tests.
-- **Phase 2:** local memories, compatible skills, MCP inspection and management with explicit change previews.
-- **Phase 3:** structured cross-agent context export and additional verified provider adapters.
+- **Phase 2:** local memories, compatible skills and read-only MCP inspection (implemented); explicit change previews are next.
+- **Phase 3:** structured cross-agent context export (implemented) and additional verified provider adapters.
 - **Phase 4:** community adapter SDK; evaluate optional encrypted device sync independently of the local core.
 
 ## Contributing

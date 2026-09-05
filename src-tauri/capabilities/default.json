@@ -2,5 +2,5 @@
   "identifier": "main",
   "description": "Local application event access; no shell, HTTP or filesystem plugin access.",
   "windows": ["main"],
-  "permissions": ["core:default"]
+  "permissions": ["core:default", "dialog:allow-save"]
 }

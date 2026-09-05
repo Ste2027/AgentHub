@@ -6,8 +6,17 @@ import {
   Cpu,
   ShieldCheck,
 } from "lucide-react";
-import type { Agent, Overview, Session, Project, Page } from "@/lib/types";
-import { desktop } from "@/lib/api";
+import { useEffect, useState } from "react";
+import type {
+  Agent,
+  Overview,
+  Session,
+  Project,
+  Page,
+  Skill,
+  McpServer,
+} from "@/lib/types";
+import { api, desktop } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Empty } from "@/components/Empty";
 import { SessionList } from "@/components/SessionList";
@@ -268,6 +277,20 @@ export function AgentsPage({
   busy: boolean;
   index: (force?: boolean) => Promise<void>;
 }) {
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [mcp, setMcp] = useState<McpServer[]>([]);
+  const [loadError, setLoadError] = useState("");
+  useEffect(() => {
+    if (!desktop) return;
+    Promise.all([api.skills(), api.mcpServers()])
+      .then(([s, m]) => {
+        setSkills(s);
+        setMcp(m);
+      })
+      .catch(() =>
+        setLoadError("Could not read local skills or MCP configuration."),
+      );
+  }, []);
   return (
     <>
       <section className="panel agent-panel">
@@ -323,6 +346,68 @@ export function AgentsPage({
         <p className="muted">
           Re-reads supported files, including previously unchanged sessions.
         </p>
+      </section>
+      <section className="panel agent-panel">
+        <h2>Local skills</h2>
+        <p className="muted">
+          Read-only discovery from each user or project skills directory.
+          AgentHub never edits these files automatically.
+        </p>
+        {loadError && (
+          <p className="error" role="alert">
+            {loadError}
+          </p>
+        )}
+        {skills.length ? (
+          skills.map((s) => (
+            <div className="agent-card" key={`${s.agent}:${s.scope}:${s.path}`}>
+              <span className="agent-mark">✦</span>
+              <div>
+                <h3>{s.name}</h3>
+                <p className="muted">
+                  {s.description || "No description in SKILL.md"}
+                </p>
+                <small>
+                  {s.agent} · {s.scope}
+                </small>
+              </div>
+              <span className="badge">
+                {s.readable ? "Readable" : "Unavailable"}
+              </span>
+            </div>
+          ))
+        ) : (
+          <p className="muted">No supported skills found yet.</p>
+        )}
+      </section>
+      <section className="panel agent-panel">
+        <h2>MCP servers</h2>
+        <p className="muted">
+          Configuration discovery only. Commands are displayed for review and
+          never started by AgentHub.
+        </p>
+        {mcp.length ? (
+          mcp.map((s) => (
+            <div
+              className="agent-card"
+              key={`${s.agent}:${s.scope}:${s.name}:${s.config_path}`}
+            >
+              <span className="agent-mark">⌁</span>
+              <div>
+                <h3>{s.name}</h3>
+                <code>{s.command || s.url || "Transport not recorded"}</code>
+                <small>
+                  {s.agent} · {s.scope} · {s.transport}
+                  {s.args.length ? ` · ${s.args.length} args` : ""}
+                  {s.env_keys.length ? ` · ${s.env_keys.length} env keys` : ""}
+                </small>
+              </div>
+              <span className="badge">Review only</span>
+            </div>
+          ))
+        ) : (
+          <p className="muted">No Claude or Codex MCP configuration found.</p>
+        )}
       </section>
     </>
   );
