@@ -128,6 +128,8 @@ export interface SessionContext {
   session_id: string;
   title: string;
   project: string;
+  repository: string;
+  git_diff: string;
   source_agent: string;
   task: string;
   decisions: string;

@@ -33,6 +33,8 @@ pub struct SessionContext {
     pub session_id: String,
     pub title: String,
     pub project: String,
+    pub repository: String,
+    pub git_diff: String,
     pub source_agent: String,
     pub task: String,
     pub decisions: String,
@@ -188,6 +190,8 @@ impl Database {
             session_id: session.id,
             title: session.title,
             project: session.project,
+            repository: String::new(),
+            git_diff: "Not collected: AgentHub does not execute Git commands.".into(),
             source_agent: session.agent,
             task: String::new(),
             decisions: String::new(),
@@ -198,6 +202,11 @@ impl Database {
             notes: Vec::new(),
             truncated: false,
         };
+        if !context.project.is_empty()
+            && std::path::Path::new(&context.project).join(".git").exists()
+        {
+            context.repository = context.project.clone();
+        }
         let mut statement = self
             .conn
             .prepare("SELECT kind,role,name,text FROM events WHERE session_id=?1 ORDER BY ordinal")

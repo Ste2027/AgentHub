@@ -166,6 +166,11 @@ export function ContextExport({
               full indexed history.
             </p>
           )}
+          <div className="context-metadata">
+            <p><strong>Project:</strong> {context.project || "Not recorded"}</p>
+            <p><strong>Repository:</strong> {context.repository || "Not detected"}</p>
+            <p><strong>Git diff:</strong> {context.git_diff}</p>
+          </div>
           {memories.length > 0 && (
             <fieldset className="context-memories">
               <legend>Include memories (optional)</legend>

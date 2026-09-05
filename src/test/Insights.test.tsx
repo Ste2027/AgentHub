@@ -16,6 +16,8 @@ beforeEach(() => {
     session_id: "s",
     title: "Fix login",
     project: "/p",
+    repository: "",
+    git_diff: "Not collected",
     source_agent: "claude",
     task: "Fix login",
     decisions: "",
