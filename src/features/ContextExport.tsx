@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, Copy } from "lucide-react";
 import { api } from "@/lib/api";
 import { saveText } from "@/lib/files";
 import { formatContext } from "@/lib/context";
@@ -18,6 +18,7 @@ export function ContextExport({
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
+  const [copied, setCopied] = useState(false);
   const [memories, setMemories] = useState<Memory[]>([]);
   const [selectedMemoryIds, setSelectedMemoryIds] = useState<string[]>([]);
   useEffect(() => {
@@ -72,6 +73,22 @@ export function ContextExport({
   }
   const change = (key: keyof SessionContext, value: string | string[]) =>
     setContext((c) => (c ? { ...c, [key]: value } : c));
+  async function copyContext() {
+    if (!context) return;
+    try {
+      await navigator.clipboard.writeText(
+        formatContext(
+          context,
+          target,
+          memories.filter((m) => selectedMemoryIds.includes(m.id)),
+        ),
+      );
+      setCopied(true);
+      setNotice("Context copied to the clipboard.");
+    } catch {
+      setError("Clipboard access was unavailable. Use Export context instead.");
+    }
+  }
   return (
     <section className="panel memory-editor context-editor">
       <Button variant="ghost" onClick={onClose}>
@@ -191,6 +208,14 @@ export function ContextExport({
           )}
           <footer>
             <span className="muted">No upload · Markdown export</span>
+            <Button
+              variant="outline"
+              disabled={saving}
+              onClick={() => void copyContext()}
+            >
+              <Copy size={15} />
+              {copied ? "Copied" : "Copy context"}
+            </Button>
             <Button disabled={saving} onClick={() => void exportFile()}>
               <Download size={15} />
               {saving ? "Exporting…" : "Export context"}

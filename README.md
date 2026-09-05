@@ -16,20 +16,21 @@ You remember solving the problem. You do not remember which agent, project or co
 
 ## Features
 
-| Capability       | What works in this release                                                                                |
-| ---------------- | --------------------------------------------------------------------------------------------------------- |
-| Session browser  | Claude Code and Codex JSONL imports; filter by agent and project; newest first; pagination                |
-| Timeline         | User/assistant messages, tool arguments, command text, outputs and recorded errors                        |
-| Universal search | Ctrl/Cmd + K; full-text search over session titles, project paths and timeline content                    |
-| Projects         | Discovered from transcript working directories, with session counts and local Git detection               |
-| Indexing         | Manual incremental scans, unchanged-file skipping, per-file transactions, progress and import diagnostics |
-| Agent paths      | Automatic directory detection and persistent absolute-path overrides                                      |
-| Appearance       | Dark by default; optional light theme; keyboard-accessible search dialog                                  |
+| Capability       | What works in this release                                                                                  |
+| ---------------- | ----------------------------------------------------------------------------------------------------------- |
+| Session browser  | Claude Code and Codex JSONL imports; filter by agent and project; newest first; pagination                  |
+| Timeline         | User/assistant messages, tool arguments, command text, outputs and recorded errors                          |
+| Universal search | Ctrl/Cmd + K; full-text search over session titles, project paths and timeline content                      |
+| Projects         | Discovered from transcript working directories, with session counts and local Git detection                 |
+| Indexing         | Manual incremental scans, unchanged-file skipping, per-file transactions, progress and import diagnostics   |
+| Agent paths      | Automatic directory detection and persistent absolute-path overrides                                        |
+| Appearance       | Dark by default; optional light theme; keyboard-accessible search dialog                                    |
 | Memories         | Global/project/agent notes with tags, search, revisions, trash, import/export and associations              |
-| Activity         | Truthful local counts for sessions, events, models, tools, file/shell requests and recorded errors       |
-| Context export   | Editable compact handoff with task, decisions, files, commands, errors and TODOs                         |
-| Skills/MCP       | Discovery, SKILL.md review/editing and review-only MCP configuration for Claude/Codex; secrets stay hidden |
-| Privacy          | Read-only source access; a local SQLite index; no account, telemetry or inference API                     |
+| Activity         | Truthful local counts for sessions, events, models, tools, file/shell requests and recorded errors          |
+| Context export   | Editable compact handoff with task, decisions, files, commands, errors and TODOs                            |
+| Skills/MCP       | Discovery, SKILL.md review/editing and review-only MCP configuration for Claude/Codex; secrets stay hidden  |
+| Marketplace      | Opt-in browsing of public GitHub skill repositories, source list, catalog search and remote SKILL.md review |
+| Privacy          | Read-only source access; a local SQLite index; no account, telemetry or inference API                       |
 
 There are no simulated charts, fabricated success rates or automatic agent commands. Skill edits and JSON MCP edits require an explicit confirmation, create a backup and use an atomic replacement with stale-file detection.
 
@@ -65,10 +66,11 @@ npm run desktop
 
 On first launch:
 
-1. Open **Agents** to inspect detected directories.
-2. If necessary, set absolute paths in **Settings**. Point Claude Code at `projects` and Codex at `sessions`, not their configuration files.
-3. Choose **Index sessions**. Source files remain untouched.
-4. Browse **Sessions** or **Projects**, or use **Ctrl/Cmd + K** to search.
+1. Follow or skip the short onboarding panel.
+2. Open **Agents** to inspect detected directories.
+3. If necessary, set absolute paths in **Settings**. Point Claude Code at `projects` and Codex at `sessions`, not their configuration files.
+4. Choose **Index sessions**. Source files remain untouched.
+5. Browse **Sessions**, **Projects**, **Memories**, **Skills**, **MCP** or **Marketplace**, or use **Ctrl/Cmd + K** to search.
 
 `npm run dev` starts an honest browser-only UI preview at `http://127.0.0.1:1420`. Local data operations require the desktop runtime. A browser preview is not a substitute for the desktop application.
 
@@ -121,6 +123,7 @@ See [architecture details](docs/architecture.md).
 ## Privacy
 
 - No telemetry libraries, cloud backend, accounts, AI API calls or remote fonts.
+- Marketplace network access is opt-in and limited to public GitHub API/raw content after an explicit Browse or Inspect click. No GitHub token is used.
 - Transcript commands and HTML are inert text. They are never executed or rendered as active markup.
 - Agent files are opened read-only. AgentHub only writes its own SQLite database.
 - The production webview has a restrictive content security policy and no shell/HTTP/filesystem plugins.
