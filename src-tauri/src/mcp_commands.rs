@@ -32,6 +32,14 @@ fn write_json_config(p: &std::path::Path, root: &serde_json::Value) -> Result<St
         let _ = std::fs::remove_file(&tmp);
         return Err(e.to_string());
     }
+    let verified = std::fs::read_to_string(p)
+        .ok()
+        .and_then(|saved| serde_json::from_str::<serde_json::Value>(&saved).ok())
+        .is_some();
+    if !verified {
+        let _ = std::fs::copy(&backup, p);
+        return Err("MCP config verification failed; the previous file was restored".into());
+    }
     Ok(backup.to_string_lossy().into_owned())
 }
 
@@ -267,7 +275,18 @@ pub async fn copy_mcp_server(
         }
         let tmp = destination.with_extension("agenthub-tmp.json");
         std::fs::write(&tmp, text).map_err(|e| e.to_string())?;
-        std::fs::rename(&tmp, &destination).map_err(|e| e.to_string())?;
+        if let Err(e) = std::fs::rename(&tmp, &destination) {
+            let _ = std::fs::remove_file(&tmp);
+            return Err(e.to_string());
+        }
+        if std::fs::read_to_string(&destination)
+            .ok()
+            .and_then(|saved| serde_json::from_str::<serde_json::Value>(&saved).ok())
+            .is_none()
+        {
+            let _ = std::fs::remove_file(&destination);
+            return Err("MCP config verification failed; the new file was removed".into());
+        }
         Ok(destination.to_string_lossy().into_owned())
     }
 }

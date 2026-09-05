@@ -83,6 +83,10 @@ pub async fn save_skill(path: String, text: String, expected: String) -> Result<
         let _ = std::fs::remove_file(&tmp);
         return Err(e.to_string());
     }
+    if std::fs::read_to_string(&p).ok().as_deref() != Some(text.as_str()) {
+        let _ = std::fs::copy(&backup, &p);
+        return Err("Skill verification failed; the previous file was restored".into());
+    }
     Ok(backup.to_string_lossy().into_owned())
 }
 #[tauri::command]
