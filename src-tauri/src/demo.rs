@@ -172,8 +172,8 @@ pub fn agents(root: &Path) -> Vec<Agent> {
         id: id.into(),
         name: name.into(),
         supported,
-        detected: true,
-        installation_detected: true,
+        detected: supported,
+        installation_detected: supported,
         config_detected: true,
         sessions_detected: supported,
         adapter_status: if supported {

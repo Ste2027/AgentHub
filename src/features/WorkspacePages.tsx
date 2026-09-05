@@ -477,8 +477,9 @@ export function AgentsPage({
       <section className="panel agent-panel">
         <h2>Supported adapters</h2>
         <p className="muted">
-          AgentHub checks local executable, configuration and session locations
-          independently. No agent is started or contacted.
+          Installation, configuration and session history are checked
+          independently. A leftover folder never counts as an installed app,
+          and no agent is started or contacted.
         </p>
         {(
           overview?.agents ?? [
@@ -519,17 +520,37 @@ export function AgentsPage({
                   ? "Executable found"
                   : "Executable not found"}{" "}
                 · {a.config_detected ? "config found" : "config not found"} ·{" "}
-                {a.sessions_detected
-                  ? "sessions found"
-                  : "sessions not indexed"}
+                {a.supported
+                  ? a.sessions_detected
+                    ? "session files found"
+                    : "no session folder found"
+                  : "session adapter planned"}
               </p>
-              <code>{a.path || a.config_path || "No local path found"}</code>
+              <code>
+                {a.sessions_detected
+                  ? a.path
+                  : a.config_detected
+                    ? a.config_path
+                    : "No local installation or data found"}
+              </code>
             </div>
-            <span className={`badge ${a.detected ? "accent" : ""}`}>
+            <span
+              className={`badge ${a.installation_detected ? "accent" : ""}`}
+            >
               {desktop
-                ? a.detected
-                  ? "Detected"
-                  : "Not found"
+                ? overview?.demo_mode
+                  ? a.installation_detected
+                    ? "Synthetic install"
+                    : a.config_detected
+                      ? "Synthetic config"
+                      : "Synthetic absence"
+                  : a.installation_detected
+                    ? "Installed"
+                    : a.sessions_detected
+                      ? "History found"
+                      : a.config_detected
+                        ? "Config found"
+                        : "Not found"
                 : "Desktop required"}
             </span>
             <span className="badge">{a.adapter_status}</span>
@@ -546,7 +567,11 @@ export function AgentsPage({
         ))}
       </section>
       <section className="panel roadmap-note">
-        <h3>Six agents detected locally</h3>
+        <h3>
+          {overview?.demo_mode
+            ? "Synthetic detection states"
+            : `${overview?.agents.filter((agent) => agent.installation_detected).length ?? 0} installed agents found`}
+        </h3>
         <p>
           Claude Code and OpenAI Codex have verified session adapters. Cursor,
           Gemini CLI, OpenCode and GitHub Copilot expose installation status
@@ -587,9 +612,7 @@ export function AgentsPage({
               <td>
                 <span className="badge accent">Supported</span>
               </td>
-              <td>
-                <span className="badge">Partial · JSON</span>
-              </td>
+              <td><span className="badge accent">Full · JSON</span></td>
             </tr>
             <tr>
               <th>OpenAI Codex</th>
@@ -599,15 +622,13 @@ export function AgentsPage({
               <td>
                 <span className="badge accent">Supported</span>
               </td>
-              <td>
-                <span className="badge">Partial · TOML review</span>
-              </td>
+              <td><span className="badge accent">Full · TOML</span></td>
             </tr>
             {[
-              ["Cursor", "Unknown"],
-              ["Gemini CLI", "Unknown"],
-              ["OpenCode", "Unknown"],
-              ["GitHub Copilot", "Unknown"],
+              ["Cursor", "Planned"],
+              ["Gemini CLI", "Planned"],
+              ["OpenCode", "Planned"],
+              ["GitHub Copilot", "Planned"],
             ].map(([name, status]) => (
               <tr key={name}>
                 <th>{name}</th>

@@ -55,7 +55,8 @@ fn scan(root: &Path, agent: &str, scope: &str, out: &mut Vec<Skill>) {
             let modified_at = fs::metadata(&file)
                 .and_then(|m| m.modified())
                 .ok()
-                .map(|t| format!("{:?}", t))
+                .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+                .map(|duration| duration.as_secs().to_string())
                 .unwrap_or_default();
             out.push(Skill {
                 name: p

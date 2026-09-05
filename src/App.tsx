@@ -321,10 +321,12 @@ export function App() {
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <div className="nav-label">ON THIS DEVICE</div>
+          <div className="nav-label">
+            {overview?.demo_mode ? "DEMO INSTALLATIONS" : "INSTALLED ON THIS DEVICE"}
+          </div>
           {overview ? (
             overview.agents
-              .filter((a) => a.supported || a.detected)
+              .filter((a) => a.installation_detected)
               .map((a) => (
                 <button
                   className="agent-status"
@@ -335,7 +337,7 @@ export function App() {
                     className={`status-dot ${a.detected ? "online" : ""}`}
                   />
                   {a.name}
-                  <small>{a.detected ? "Detected" : "Not found"}</small>
+                  <small>{overview.demo_mode ? "Synthetic" : "Installed"}</small>
                 </button>
               ))
           ) : (
@@ -396,7 +398,12 @@ export function App() {
               </Button>
             </div>
           )}
-          {onboarding && <Onboarding onDone={() => setOnboarding(false)} />}
+          {onboarding && (
+            <Onboarding
+              onDone={() => setOnboarding(false)}
+              onIndex={() => index()}
+            />
+          )}
           {selected ? (
             <Timeline
               key={`${selected.id}:${ordinal}`}
@@ -524,7 +531,16 @@ export function App() {
                 <SkillsPage selection={resourceSelection} />
               )}
               {page === "mcp" && <McpPage selection={resourceSelection} />}
-              {page === "marketplace" && <MarketplacePage />}
+              {page === "marketplace" && (
+                <MarketplacePage
+                  demoMode={overview?.demo_mode === true}
+                  demoDestination={
+                    overview?.demo_mode && overview.database_path
+                      ? `${overview.database_path.replace(/[\\/][^\\/]+$/, "")}${overview.database_path.includes("\\") ? "\\home\\.agents\\skills" : "/home/.agents/skills"}`
+                      : ""
+                  }
+                />
+              )}
             </>
           )}
         </div>

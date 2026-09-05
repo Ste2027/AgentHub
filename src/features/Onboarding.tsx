@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { Check, ShieldCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-export function Onboarding({ onDone }: { onDone: () => void }) {
+export function Onboarding({
+  onDone,
+  onIndex,
+}: {
+  onDone: () => void;
+  onIndex: () => Promise<void>;
+}) {
   const [step, setStep] = useState(0);
   const steps = [
     [
@@ -24,6 +30,10 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
   const finish = () => {
     localStorage.setItem("agenthub.onboarding.v1", "done");
     onDone();
+  };
+  const finishAndIndex = () => {
+    finish();
+    void onIndex();
   };
   return (
     <div className="onboarding-backdrop">
@@ -80,7 +90,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             {step < steps.length - 1 ? (
               <Button onClick={() => setStep(step + 1)}>Continue</Button>
             ) : (
-              <Button onClick={finish}>Open my workspace</Button>
+              <Button onClick={finishAndIndex}>Index my sessions</Button>
             )}
           </footer>
         </div>

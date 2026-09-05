@@ -1065,6 +1065,43 @@ select {
   margin-top: 7px;
   font-size: 10px;
 }
+.compatibility-panel {
+  margin-top: 20px;
+  padding: 24px;
+  overflow-x: auto;
+}
+.compatibility-panel > p {
+  margin: 8px 0 20px;
+}
+.compatibility-panel table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+}
+.compatibility-panel th,
+.compatibility-panel td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.compatibility-panel thead th {
+  color: var(--muted);
+  background: var(--surface-muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.compatibility-panel tbody th {
+  width: 28%;
+  font-size: 12px;
+}
+.compatibility-panel tbody tr:last-child > * {
+  border-bottom: 0;
+}
 .roadmap-note {
   padding: 23px;
   margin-top: 20px;

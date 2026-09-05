@@ -18,6 +18,15 @@ function diffText(before: string, after: string): string {
   }).join("\n");
 }
 
+function modifiedLabel(value: string): string {
+  const seconds = Number(value);
+  if (!Number.isFinite(seconds) || seconds <= 0) return "";
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(seconds * 1000));
+}
+
 export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
   const [items, setItems] = useState<Skill[]>([]);
   const [open, setOpen] = useState<{
@@ -253,7 +262,9 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
                   <p>{s.description || "No description in frontmatter."}</p>
                   <small>
                     {s.agent} · {s.scope} · {s.path}
-                    {s.modified_at ? ` · updated ${s.modified_at}` : ""}
+                    {modifiedLabel(s.modified_at)
+                      ? ` · updated ${modifiedLabel(s.modified_at)}`
+                      : ""}
                     {s.files.length
                       ? ` · ${s.files.length} associated files`
                       : ""}

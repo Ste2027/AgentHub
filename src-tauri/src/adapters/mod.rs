@@ -99,7 +99,10 @@ pub fn agents(settings: &Settings) -> Vec<Agent> {
                 id: id.into(),
                 name: name.into(),
                 supported,
-                detected: installation_detected || config_detected || sessions_detected,
+                // `detected` is the installation signal shown in summaries. A stale
+                // config directory or old transcript must not imply that the app is
+                // currently installed; those signals remain available separately.
+                detected: installation_detected,
                 installation_detected,
                 config_detected,
                 sessions_detected,
@@ -259,6 +262,9 @@ mod agent_detection_tests {
         let found = agents(&Settings::default());
         assert_eq!(found.len(), 6);
         assert_eq!(found.iter().filter(|agent| agent.supported).count(), 2);
+        assert!(found
+            .iter()
+            .all(|agent| agent.detected == agent.installation_detected));
         for id in ["cursor", "gemini", "opencode", "copilot"] {
             let agent = found.iter().find(|agent| agent.id == id).unwrap();
             assert_eq!(agent.adapter_status, "Detection only");
