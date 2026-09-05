@@ -33,6 +33,8 @@ export const api = {
   skillContent: (path: string) => call<SkillFile>("read_skill", { path }),
   saveSkill: (path: string, text: string, expected: string) =>
     call<string>("save_skill", { path, text, expected }),
+  restoreSkill: (path: string, backup: string) =>
+    call<void>("restore_skill", { path, backup }),
   mcpServers: () => call<McpServer[]>("list_mcp_servers"),
   mcpConfig: (path: string) => call<McpFile>("read_mcp_config", { path }),
   saveMcpConfig: (path: string, text: string, expected: string) =>

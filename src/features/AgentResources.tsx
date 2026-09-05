@@ -13,6 +13,7 @@ export function SkillsPage() {
     text: string;
     hash: string;
     editing: boolean;
+    backup?: string;
   } | null>(null);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
@@ -175,13 +176,18 @@ export function SkillsPage() {
                     return;
                   api
                     .saveSkill(open.path, open.text, open.hash)
-                    .then(() => api.skillContent(open.path))
-                    .then((file) =>
+                    .then((backup) =>
+                      api
+                        .skillContent(open.path)
+                        .then((file) => ({ backup, file })),
+                    )
+                    .then(({ backup, file }) =>
                       setOpen({
                         ...open,
                         text: file.text,
                         hash: file.hash,
                         editing: false,
+                        backup,
                       }),
                     )
                     .catch((e) =>
@@ -195,6 +201,34 @@ export function SkillsPage() {
               >
                 Save skill
               </Button>
+              {open.backup && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    if (!window.confirm("Restore the last backup?")) return;
+                    api
+                      .restoreSkill(open.path, open.backup!)
+                      .then(() => api.skillContent(open.path))
+                      .then((file) =>
+                        setOpen({
+                          ...open,
+                          text: file.text,
+                          hash: file.hash,
+                          backup: undefined,
+                        }),
+                      )
+                      .catch((e) =>
+                        setError(
+                          e instanceof Error
+                            ? e.message
+                            : "Could not restore backup.",
+                        ),
+                      );
+                  }}
+                >
+                  Rollback last backup
+                </Button>
+              )}
             </>
           ) : (
             <pre>{open.text}</pre>

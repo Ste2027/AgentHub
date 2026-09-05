@@ -65,3 +65,28 @@ pub async fn save_skill(path: String, text: String, expected: String) -> Result<
     }
     Ok(backup.to_string_lossy().into_owned())
 }
+#[tauri::command]
+pub async fn restore_skill(path: String, backup: String) -> Result<(), String> {
+    let p = std::path::PathBuf::from(&path);
+    let b = std::path::PathBuf::from(&backup);
+    if !p.is_absolute()
+        || p.file_name().and_then(|v| v.to_str()) != Some("SKILL.md")
+        || !b.is_absolute()
+        || b.parent() != p.parent()
+        || !b
+            .file_name()
+            .and_then(|v| v.to_str())
+            .unwrap_or("")
+            .starts_with("SKILL.md.agenthub-backup-")
+    {
+        return Err("Invalid skill backup path".into());
+    }
+    let text = std::fs::read_to_string(&b).map_err(|e| e.to_string())?;
+    let tmp = p.with_file_name("SKILL.md.agenthub-restore-tmp");
+    std::fs::write(&tmp, text).map_err(|e| e.to_string())?;
+    if let Err(e) = std::fs::rename(&tmp, &p) {
+        let _ = std::fs::remove_file(tmp);
+        return Err(e.to_string());
+    }
+    Ok(())
+}
