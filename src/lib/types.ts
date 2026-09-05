@@ -185,4 +185,6 @@ export interface McpServer {
 export interface McpFile {
   text: string;
   hash: string;
+  format: "json" | "toml";
+  secrets_revealed: boolean;
 }

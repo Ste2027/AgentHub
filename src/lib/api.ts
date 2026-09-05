@@ -46,7 +46,8 @@ export const api = {
   restoreDeletedSkill: (trashPath: string) =>
     call<string>("restore_deleted_skill", { trashPath }),
   mcpServers: () => call<McpServer[]>("list_mcp_servers"),
-  mcpConfig: (path: string) => call<McpFile>("read_mcp_config", { path }),
+  mcpConfig: (path: string, revealSecrets = false) =>
+    call<McpFile>("read_mcp_config", { path, revealSecrets }),
   saveMcpConfig: (path: string, text: string, expected: string) =>
     call<string>("save_mcp_config", { path, text, expected }),
   restoreMcpConfig: (path: string, backup: string) =>

@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   mcpConfig: vi.fn(async () => ({
     text: '{"mcpServers":{"target":{}}}',
     hash: "v1",
+    format: "json" as const,
+    secrets_revealed: false,
   })),
   saveMcpConfig: vi.fn(async () => "/synthetic/config.json.agenthub-backup-1"),
   restoreMcpConfig: vi.fn(
@@ -83,8 +85,10 @@ it("keeps a verified MCP backup available for an explicit rollback", async () =>
   vi.spyOn(window, "confirm").mockReturnValue(true);
   render(<McpPage />);
   fireEvent.click(await screen.findByRole("button", { name: "Review" }));
-  fireEvent.click(await screen.findByRole("button", { name: "Edit JSON" }));
-  fireEvent.change(screen.getByLabelText("MCP configuration"), {
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Reveal & edit JSON" }),
+  );
+  fireEvent.change(await screen.findByLabelText("MCP configuration"), {
     target: { value: '{"mcpServers":{"target":{"disabled":true}}}' },
   });
   fireEvent.click(screen.getByRole("button", { name: "Save MCP config" }));

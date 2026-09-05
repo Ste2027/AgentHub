@@ -461,6 +461,8 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
     text: string;
     original: string;
     hash: string;
+    format: "json" | "toml";
+    secretsRevealed: boolean;
     editing: boolean;
     server?: string;
     backup?: string;
@@ -484,6 +486,8 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
             text: file.text,
             original: file.text,
             hash: file.hash,
+            format: file.format,
+            secretsRevealed: file.secrets_revealed,
             editing: false,
             server: selection.title,
           });
@@ -531,8 +535,8 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
           <h2>MCP servers</h2>
           <p className="muted">
             Review Claude and Codex configuration and explicitly edit supported
-            formats. AgentHub never starts a server, connects to it or reveals
-            secret values.
+            formats. AgentHub never starts a server or connects to it. Sensitive
+            values stay masked until you explicitly open the editor.
           </p>
         </div>
         <span className="badge">{items.length} discovered</span>
@@ -540,7 +544,7 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
           variant="outline"
           onClick={async () => {
             const path = window.prompt(
-              "Absolute JSON MCP config path to update:",
+              "Absolute JSON or TOML MCP config path to update:",
             );
             const name = path && window.prompt("New server name:");
             const config =
@@ -552,7 +556,7 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
               !path ||
               !name ||
               !config ||
-              !window.confirm(`Add ${name} to this MCP config?`)
+                  !window.confirm(`Add ${name} to this MCP configuration?`)
             )
               return;
             try {
@@ -615,6 +619,8 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
                     text: file.text,
                     original: file.text,
                     hash: file.hash,
+                    format: file.format,
+                    secretsRevealed: file.secrets_revealed,
                     editing: false,
                     backup: rollback,
                   });
@@ -679,6 +685,8 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
                         text: f.text,
                         original: f.text,
                         hash: f.hash,
+                        format: f.format,
+                        secretsRevealed: f.secrets_revealed,
                         editing: false,
                       }),
                     )
@@ -730,7 +738,7 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
                 size="sm"
                 onClick={async () => {
                   const destination = window.prompt(
-                    "Absolute destination JSON config path for this server:",
+                    "Absolute destination JSON or TOML config path for this server:",
                   );
                   if (
                     !destination ||
@@ -842,9 +850,43 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setOpen({ ...open, editing: !open.editing })}
+                onClick={async () => {
+                  if (open.editing) {
+                    const file = await api.mcpConfig(open.path);
+                    setOpen({
+                      ...open,
+                      text: file.text,
+                      original: file.text,
+                      hash: file.hash,
+                      format: file.format,
+                      secretsRevealed: false,
+                      editing: false,
+                    });
+                    return;
+                  }
+                  try {
+                    const file = await api.mcpConfig(open.path, true);
+                    setOpen({
+                      ...open,
+                      text: file.text,
+                      original: file.text,
+                      hash: file.hash,
+                      format: file.format,
+                      secretsRevealed: true,
+                      editing: true,
+                    });
+                  } catch (e) {
+                    setError(
+                      e instanceof Error
+                        ? e.message
+                        : "Could not open this configuration for editing.",
+                    );
+                  }
+                }}
               >
-                {open.editing ? "Cancel edit" : "Edit JSON"}
+                {open.editing
+                  ? "Cancel edit"
+                  : `Reveal & edit ${open.format.toUpperCase()}`}
               </Button>
               <Button variant="ghost" size="sm" onClick={() => setOpen(null)}>
                 Close
@@ -853,6 +895,10 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
           </header>
           {open.editing ? (
             <>
+              <p className="notice">
+                Sensitive values are visible while this editor is open. Nothing
+                is sent outside this device.
+              </p>
               <textarea
                 className="skill-editor"
                 aria-label="MCP configuration"
@@ -884,6 +930,8 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
                         text: f.text,
                         original: f.text,
                         hash: f.hash,
+                        format: f.format,
+                        secretsRevealed: f.secrets_revealed,
                         editing: false,
                         backup,
                       });

@@ -23,6 +23,8 @@ pub struct McpServer {
 pub struct McpFile {
     pub text: String,
     pub hash: String,
+    pub format: String,
+    pub secrets_revealed: bool,
 }
 fn add_json(path: &Path, agent: &str, scope: &str, out: &mut Vec<McpServer>) {
     let Ok(text) = fs::read_to_string(path) else {
@@ -119,7 +121,7 @@ fn add_toml(path: &Path, out: &mut Vec<McpServer>) {
             args,
             env_keys,
             url,
-            enabled: true,
+            enabled: t.get("enabled").and_then(toml::Value::as_bool) != Some(false),
             readable: true,
         });
     }
