@@ -271,3 +271,76 @@ pub async fn copy_mcp_server(
         Ok(destination.to_string_lossy().into_owned())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sha2::Digest;
+
+    fn temp_config() -> std::path::PathBuf {
+        let root = std::env::temp_dir().join(format!(
+            "agenthub-mcp-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&root).unwrap();
+        let path = root.join("mcp.json");
+        std::fs::write(
+            &path,
+            r#"{"mcpServers":{"files":{"command":"node","args":["server.js"],"env":{"TOKEN":"secret"}}}}"#,
+        )
+        .unwrap();
+        path
+    }
+
+    fn expected(path: &std::path::Path) -> String {
+        format!("{:x}", sha2::Sha256::digest(std::fs::read(path).unwrap()))
+    }
+
+    #[test]
+    fn mcp_mutations_keep_json_valid_and_backup_before_changes() {
+        let path = temp_config();
+        let path_s = path.to_string_lossy().into_owned();
+        let backup = tauri::async_runtime::block_on(duplicate_mcp_server(
+            path_s.clone(),
+            "files".into(),
+            "files-copy".into(),
+            expected(&path),
+        ))
+        .unwrap();
+        assert!(std::path::Path::new(&backup).exists());
+        let root: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert!(root["mcpServers"]["files-copy"].is_object());
+
+        tauri::async_runtime::block_on(set_mcp_enabled(
+            path_s.clone(),
+            "files-copy".into(),
+            false,
+            expected(&path),
+        ))
+        .unwrap();
+        let root: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(
+            root["mcpServers"]["files-copy"]["disabled"],
+            serde_json::Value::Bool(true)
+        );
+
+        tauri::async_runtime::block_on(add_mcp_server(
+            path_s.clone(),
+            "http".into(),
+            r#"{"url":"https://example.invalid/mcp"}"#.into(),
+            expected(&path),
+        ))
+        .unwrap();
+        tauri::async_runtime::block_on(remove_mcp_server(path_s, "http".into(), expected(&path)))
+            .unwrap();
+        let root: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert!(root["mcpServers"].get("http").is_none());
+        let _ = std::fs::remove_dir_all(path.parent().unwrap());
+    }
+}

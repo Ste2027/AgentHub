@@ -184,3 +184,74 @@ pub async fn delete_skill(path: String) -> Result<String, String> {
     std::fs::rename(&p, &trash).map_err(|e| e.to_string())?;
     Ok(trash.to_string_lossy().into_owned())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sha2::Digest;
+
+    fn temp_root(label: &str) -> std::path::PathBuf {
+        let id = format!(
+            "agenthub-{label}-{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
+        let root = std::env::temp_dir().join(id);
+        std::fs::create_dir_all(&root).unwrap();
+        root
+    }
+
+    #[test]
+    fn skill_mutations_backup_restore_copy_install_and_trash() {
+        let root = temp_root("skill");
+        let skill_dir = root.join("source");
+        std::fs::create_dir_all(skill_dir.join("scripts")).unwrap();
+        let skill = skill_dir.join("SKILL.md");
+        std::fs::write(&skill, "old skill\n").unwrap();
+        std::fs::write(skill_dir.join("scripts").join("notes.txt"), "asset").unwrap();
+        let old_hash = format!("{:x}", sha2::Sha256::digest(b"old skill\n"));
+
+        let backup = tauri::async_runtime::block_on(save_skill(
+            skill.to_string_lossy().into_owned(),
+            "new skill\n".into(),
+            old_hash,
+        ))
+        .unwrap();
+        assert_eq!(std::fs::read_to_string(&skill).unwrap(), "new skill\n");
+        assert!(std::path::Path::new(&backup).exists());
+
+        tauri::async_runtime::block_on(restore_skill(skill.to_string_lossy().into_owned(), backup))
+            .unwrap();
+        assert_eq!(std::fs::read_to_string(&skill).unwrap(), "old skill\n");
+
+        let copied = tauri::async_runtime::block_on(copy_skill(
+            skill.to_string_lossy().into_owned(),
+            root.join("copied").to_string_lossy().into_owned(),
+        ))
+        .unwrap();
+        assert!(std::path::Path::new(&copied).join("SKILL.md").exists());
+        assert!(std::path::Path::new(&copied)
+            .join("scripts/notes.txt")
+            .exists());
+
+        let trash =
+            tauri::async_runtime::block_on(delete_skill(skill.to_string_lossy().into_owned()))
+                .unwrap();
+        assert!(!skill.exists());
+        assert!(std::path::Path::new(&trash).exists());
+
+        let installed = tauri::async_runtime::block_on(install_skill(
+            "imported".into(),
+            "# imported\n".into(),
+            root.join("installed").to_string_lossy().into_owned(),
+        ))
+        .unwrap();
+        assert_eq!(
+            std::fs::read_to_string(std::path::Path::new(&installed).join("SKILL.md")).unwrap(),
+            "# imported\n"
+        );
+        let _ = std::fs::remove_dir_all(root);
+    }
+}
