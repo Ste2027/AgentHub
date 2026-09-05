@@ -26,6 +26,7 @@
   },
   "bundle": {
     "active": true,
+    "icon": ["icons/icon.ico", "icons/icon.icns", "icons/icon.png"],
     "targets": "all",
     "shortDescription": "Your coding agents, in one local workspace",
     "category": "DeveloperTool"
