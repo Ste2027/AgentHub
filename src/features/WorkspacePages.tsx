@@ -351,6 +351,68 @@ export function AgentsPage({
           Re-reads supported files, including previously unchanged sessions.
         </p>
       </section>
+      <section className="panel compatibility-panel">
+        <h2>Adapter compatibility</h2>
+        <p className="muted">
+          Status reflects what AgentHub can parse and verify locally in this
+          release.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Agent</th>
+              <th>Sessions</th>
+              <th>Skills</th>
+              <th>MCP</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>Claude Code</th>
+              <td>
+                <span className="badge accent">Supported</span>
+              </td>
+              <td>
+                <span className="badge accent">Supported</span>
+              </td>
+              <td>
+                <span className="badge">Partial · JSON</span>
+              </td>
+            </tr>
+            <tr>
+              <th>OpenAI Codex</th>
+              <td>
+                <span className="badge accent">Supported</span>
+              </td>
+              <td>
+                <span className="badge accent">Supported</span>
+              </td>
+              <td>
+                <span className="badge">Partial · TOML review</span>
+              </td>
+            </tr>
+            {[
+              ["Cursor", "Unknown"],
+              ["Gemini CLI", "Unknown"],
+              ["OpenCode", "Unknown"],
+              ["GitHub Copilot", "Unknown"],
+            ].map(([name, status]) => (
+              <tr key={name}>
+                <th>{name}</th>
+                <td>
+                  <span className="badge">{status}</span>
+                </td>
+                <td>
+                  <span className="badge">{status}</span>
+                </td>
+                <td>
+                  <span className="badge">{status}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
       <section className="panel agent-panel">
         <h2>Local skills</h2>
         <p className="muted">
@@ -386,7 +448,9 @@ export function AgentsPage({
                 onClick={() =>
                   api
                     .skillContent(s.path)
-                    .then((file) => setSkillContent({ name: s.name, text: file.text }))
+                    .then((file) =>
+                      setSkillContent({ name: s.name, text: file.text }),
+                    )
                     .catch(() => setLoadError("Could not read this SKILL.md."))
                 }
               >
