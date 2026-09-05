@@ -61,14 +61,33 @@ it("reports export cancellation without claiming success", async () => {
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
 });
 it("exports a versioned JSON package with edits and only explicitly selected memories", async () => {
-  mocks.memories.mockResolvedValue({ items: [
-    { id: "include", title: "Conventions", scope: "global", body: "Use migrations", agents: [] },
-    { id: "exclude", title: "Private draft", scope: "global", body: "Do not share", agents: [] },
-  ], total: 2 });
+  mocks.memories.mockResolvedValue({
+    items: [
+      {
+        id: "include",
+        title: "Conventions",
+        scope: "global",
+        body: "Use migrations",
+        agents: [],
+      },
+      {
+        id: "exclude",
+        title: "Private draft",
+        scope: "global",
+        body: "Do not share",
+        agents: [],
+      },
+    ],
+    total: 2,
+  });
   render(<ContextExport sessionId="s" onClose={vi.fn()} />);
-  fireEvent.change(await screen.findByLabelText("Task"), { target: { value: "Reviewed goal" } });
+  fireEvent.change(await screen.findByLabelText("Task"), {
+    target: { value: "Reviewed goal" },
+  });
   fireEvent.click(screen.getByRole("checkbox", { name: "Conventions global" }));
-  fireEvent.change(screen.getByLabelText("Export format"), { target: { value: "json" } });
+  fireEvent.change(screen.getByLabelText("Export format"), {
+    target: { value: "json" },
+  });
   fireEvent.click(screen.getByRole("button", { name: "Export context" }));
   await waitFor(() => expect(mocks.saveText).toHaveBeenCalled());
   const [text, filename] = mocks.saveText.mock.calls[0];
@@ -78,7 +97,9 @@ it("exports a versioned JSON package with edits and only explicitly selected mem
   expect(result.version).toBe(1);
   expect(result.context.task).toBe("Reviewed goal");
   expect(result.target_agent).toBe("OpenAI Codex");
-  expect(result.memories.map((memory: { id: string }) => memory.id)).toEqual(["include"]);
+  expect(result.memories.map((memory: { id: string }) => memory.id)).toEqual([
+    "include",
+  ]);
   expect(text).not.toContain("Do not share");
 });
 it("shows source failures", async () => {
@@ -87,14 +108,45 @@ it("shows source failures", async () => {
   expect(await screen.findByRole("alert")).toHaveTextContent("Session missing");
 });
 it("offers matching memories from later pages without selecting them automatically", async () => {
-  mocks.memories.mockResolvedValueOnce({ items: [{ id: "unrelated", title: "Other project", scope: "project", project: "/other", agents: [] }], total: 2 })
-    .mockResolvedValueOnce({ items: [{ id: "later", title: "Later convention", scope: "global", body: "Keep schemas versioned", agents: [] }], total: 2 });
+  mocks.memories
+    .mockResolvedValueOnce({
+      items: [
+        {
+          id: "unrelated",
+          title: "Other project",
+          scope: "project",
+          project: "/other",
+          agents: [],
+        },
+      ],
+      total: 2,
+    })
+    .mockResolvedValueOnce({
+      items: [
+        {
+          id: "later",
+          title: "Later convention",
+          scope: "global",
+          body: "Keep schemas versioned",
+          agents: [],
+        },
+      ],
+      total: 2,
+    });
   render(<ContextExport sessionId="s" onClose={vi.fn()} />);
-  fireEvent.click(await screen.findByRole("button", { name: "Load more memories" }));
-  expect(await screen.findByRole("checkbox", { name: "Later convention global" })).not.toBeChecked();
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Load more memories" }),
+  );
+  expect(
+    await screen.findByRole("checkbox", { name: "Later convention global" }),
+  ).not.toBeChecked();
   expect(mocks.memories).toHaveBeenLastCalledWith("", "", false, 1);
-  expect(screen.queryByRole("checkbox", { name: "Other project project" })).not.toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: "Load more memories" })).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("checkbox", { name: "Other project project" }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "Load more memories" }),
+  ).not.toBeInTheDocument();
 });
 it("renders empty analytics without invented data", async () => {
   mocks.analytics.mockResolvedValue({

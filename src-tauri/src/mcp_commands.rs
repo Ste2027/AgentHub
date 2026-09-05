@@ -20,18 +20,7 @@ fn write_json_config(p: &std::path::Path, root: &serde_json::Value) -> Result<St
         p.file_name().unwrap_or_default().to_string_lossy()
     ));
     std::fs::copy(p, &backup).map_err(|e| e.to_string())?;
-    let tmp = p.with_file_name(format!(
-        "{}.agenthub-tmp-{suffix}",
-        p.file_name().unwrap_or_default().to_string_lossy()
-    ));
-    if let Err(e) = std::fs::write(&tmp, text.as_bytes()) {
-        let _ = std::fs::remove_file(&tmp);
-        return Err(e.to_string());
-    }
-    if let Err(e) = std::fs::rename(&tmp, p) {
-        let _ = std::fs::remove_file(&tmp);
-        return Err(e.to_string());
-    }
+    crate::exports::replace_text(p, &text)?;
     let verified = std::fs::read_to_string(p)
         .ok()
         .and_then(|saved| serde_json::from_str::<serde_json::Value>(&saved).ok())
@@ -45,7 +34,9 @@ fn write_json_config(p: &std::path::Path, root: &serde_json::Value) -> Result<St
 
 fn load_json(path: &str) -> Result<(std::path::PathBuf, serde_json::Value), String> {
     let p = std::path::PathBuf::from(path);
-    if !p.is_absolute() || !matches!(p.extension().and_then(|x| x.to_str()), Some("json")) {
+    if !crate::paths::is_local_absolute(&p)
+        || !matches!(p.extension().and_then(|x| x.to_str()), Some("json"))
+    {
         return Err("Only absolute JSON MCP configs can be changed safely".into());
     }
     let text = std::fs::read_to_string(&p).map_err(|e| e.to_string())?;
@@ -79,7 +70,7 @@ pub async fn list_mcp_servers(state: State<'_, AppState>) -> Result<Vec<McpServe
 #[tauri::command]
 pub async fn read_mcp_config(path: String) -> Result<McpFile, String> {
     let p = std::path::PathBuf::from(path);
-    if !p.is_absolute() {
+    if !crate::paths::is_local_absolute(&p) {
         return Err("Only a local MCP config can be opened".into());
     }
     let text = std::fs::read_to_string(&p).map_err(|e| e.to_string())?;
@@ -96,7 +87,9 @@ pub async fn save_mcp_config(
     expected: String,
 ) -> Result<String, String> {
     let p = std::path::PathBuf::from(&path);
-    if !p.is_absolute() || !matches!(p.extension().and_then(|x| x.to_str()), Some("json")) {
+    if !crate::paths::is_local_absolute(&p)
+        || !matches!(p.extension().and_then(|x| x.to_str()), Some("json"))
+    {
         return Err("Only JSON MCP configs can be edited safely in this release".into());
     }
     let current = std::fs::read_to_string(&p).map_err(|e| e.to_string())?;
@@ -115,15 +108,7 @@ pub async fn save_mcp_config(
         p.file_name().unwrap().to_string_lossy()
     ));
     std::fs::copy(&p, &backup).map_err(|e| e.to_string())?;
-    let tmp = p.with_file_name(format!(
-        "{}.agenthub-tmp-{stamp}",
-        p.file_name().unwrap().to_string_lossy()
-    ));
-    std::fs::write(&tmp, text.as_bytes()).map_err(|e| e.to_string())?;
-    if let Err(e) = std::fs::rename(&tmp, &p) {
-        let _ = std::fs::remove_file(&tmp);
-        return Err(e.to_string());
-    }
+    crate::exports::replace_text(&p, &text)?;
     // Verify the final file can still be parsed. If the filesystem accepted the
     // replacement but the result is unreadable, restore the known-good backup.
     let verified = std::fs::read_to_string(&p)
@@ -135,6 +120,42 @@ pub async fn save_mcp_config(
         return Err("MCP config verification failed; the previous file was restored".into());
     }
     Ok(backup.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+pub async fn restore_mcp_config(path: String, backup: String) -> Result<String, String> {
+    let p = std::path::PathBuf::from(&path);
+    let b = std::path::PathBuf::from(&backup);
+    let file_name = p
+        .file_name()
+        .and_then(|value| value.to_str())
+        .ok_or_else(|| "Invalid MCP config path".to_string())?;
+    let backup_name = b.file_name().and_then(|value| value.to_str()).unwrap_or("");
+    if !crate::paths::is_local_absolute(&p)
+        || !crate::paths::is_local_absolute(&b)
+        || p.parent() != b.parent()
+        || !backup_name.starts_with(&format!("{file_name}.agenthub-backup-"))
+    {
+        return Err("Invalid MCP backup path".into());
+    }
+    let backup_text = std::fs::read_to_string(&b).map_err(|e| e.to_string())?;
+    let _: serde_json::Value =
+        serde_json::from_str(&backup_text).map_err(|e| format!("Backup is not valid JSON: {e}"))?;
+    let suffix = stamp()?;
+    let rollback = p.with_file_name(format!(
+        "{file_name}.agenthub-backup-before-restore-{suffix}"
+    ));
+    std::fs::copy(&p, &rollback).map_err(|e| e.to_string())?;
+    crate::exports::replace_text(&p, &backup_text)?;
+    if std::fs::read_to_string(&p)
+        .ok()
+        .and_then(|saved| serde_json::from_str::<serde_json::Value>(&saved).ok())
+        .is_none()
+    {
+        let _ = std::fs::copy(&rollback, &p);
+        return Err("MCP restore verification failed; the previous file was restored".into());
+    }
+    Ok(rollback.to_string_lossy().into_owned())
 }
 
 #[tauri::command]
@@ -247,7 +268,7 @@ pub async fn copy_mcp_server(
         .cloned()
         .ok_or_else(|| "MCP server was not found".to_string())?;
     let destination = std::path::PathBuf::from(destination_path);
-    if !destination.is_absolute()
+    if !crate::paths::is_local_absolute(&destination)
         || !matches!(
             destination.extension().and_then(|x| x.to_str()),
             Some("json")
@@ -273,12 +294,7 @@ pub async fn copy_mcp_server(
         if let Some(parent) = destination.parent() {
             std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         }
-        let tmp = destination.with_extension("agenthub-tmp.json");
-        std::fs::write(&tmp, text).map_err(|e| e.to_string())?;
-        if let Err(e) = std::fs::rename(&tmp, &destination) {
-            let _ = std::fs::remove_file(&tmp);
-            return Err(e.to_string());
-        }
+        crate::exports::replace_text(&destination, &text)?;
         if std::fs::read_to_string(&destination)
             .ok()
             .and_then(|saved| serde_json::from_str::<serde_json::Value>(&saved).ok())
@@ -360,6 +376,24 @@ mod tests {
         let root: serde_json::Value =
             serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
         assert!(root["mcpServers"].get("http").is_none());
+        let before_restore = tauri::async_runtime::block_on(restore_mcp_config(
+            path.to_string_lossy().into_owned(),
+            backup,
+        ))
+        .unwrap();
+        let restored: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert!(restored["mcpServers"].get("files-copy").is_none());
+        assert!(std::path::Path::new(&before_restore).exists());
+        assert!(tauri::async_runtime::block_on(restore_mcp_config(
+            path.to_string_lossy().into_owned(),
+            path.parent()
+                .unwrap()
+                .join("unrelated.json")
+                .to_string_lossy()
+                .into_owned(),
+        ))
+        .is_err());
         let _ = std::fs::remove_dir_all(path.parent().unwrap());
     }
 }

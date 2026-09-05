@@ -31,6 +31,9 @@ export const api = {
   analytics: () => call<Analytics>("get_analytics"),
   skills: () => call<Skill[]>("list_skills"),
   skillContent: (path: string) => call<SkillFile>("read_skill", { path }),
+  exportSkill: (path: string) => call<string>("export_skill", { path }),
+  importSkillArchive: (json: string, destinationDir: string) =>
+    call<string>("import_skill_archive", { json, destinationDir }),
   saveSkill: (path: string, text: string, expected: string) =>
     call<string>("save_skill", { path, text, expected }),
   restoreSkill: (path: string, backup: string) =>
@@ -40,18 +43,34 @@ export const api = {
   installSkill: (name: string, text: string, destinationDir: string) =>
     call<string>("install_skill", { name, text, destinationDir }),
   deleteSkill: (path: string) => call<string>("delete_skill", { path }),
+  restoreDeletedSkill: (trashPath: string) =>
+    call<string>("restore_deleted_skill", { trashPath }),
   mcpServers: () => call<McpServer[]>("list_mcp_servers"),
   mcpConfig: (path: string) => call<McpFile>("read_mcp_config", { path }),
   saveMcpConfig: (path: string, text: string, expected: string) =>
     call<string>("save_mcp_config", { path, text, expected }),
-  duplicateMcpServer: (path: string, name: string, newName: string, expected: string) =>
-    call<string>("duplicate_mcp_server", { path, name, newName, expected }),
-  addMcpServer: (path: string, name: string, configJson: string, expected: string) =>
-    call<string>("add_mcp_server", { path, name, configJson, expected }),
+  restoreMcpConfig: (path: string, backup: string) =>
+    call<string>("restore_mcp_config", { path, backup }),
+  duplicateMcpServer: (
+    path: string,
+    name: string,
+    newName: string,
+    expected: string,
+  ) => call<string>("duplicate_mcp_server", { path, name, newName, expected }),
+  addMcpServer: (
+    path: string,
+    name: string,
+    configJson: string,
+    expected: string,
+  ) => call<string>("add_mcp_server", { path, name, configJson, expected }),
   removeMcpServer: (path: string, name: string, expected: string) =>
     call<string>("remove_mcp_server", { path, name, expected }),
-  setMcpEnabled: (path: string, name: string, enabled: boolean, expected: string) =>
-    call<string>("set_mcp_enabled", { path, name, enabled, expected }),
+  setMcpEnabled: (
+    path: string,
+    name: string,
+    enabled: boolean,
+    expected: string,
+  ) => call<string>("set_mcp_enabled", { path, name, enabled, expected }),
   copyMcpServer: (sourcePath: string, name: string, destinationPath: string) =>
     call<string>("copy_mcp_server", { sourcePath, name, destinationPath }),
   context: (sessionId: string) =>
@@ -74,8 +93,24 @@ export const api = {
   settings: () => call<Settings>("get_settings"),
   saveSettings: (settings: Settings) =>
     call<void>("save_settings", { settings }),
-  sessions: (agent = "", project = "", dateFrom = "", dateTo = "", model = "", sort = "newest", offset = 0) =>
-    call<Session[]>("list_sessions", { agent, project, dateFrom, dateTo, model, sort, offset }),
+  sessions: (
+    agent = "",
+    project = "",
+    dateFrom = "",
+    dateTo = "",
+    model = "",
+    sort = "newest",
+    offset = 0,
+  ) =>
+    call<Session[]>("list_sessions", {
+      agent,
+      project,
+      dateFrom,
+      dateTo,
+      model,
+      sort,
+      offset,
+    }),
   events: (sessionId: string, offset = 0) =>
     call<TimelineEvent[]>("session_events", { sessionId, offset }),
   projects: () => call<Project[]>("list_projects"),

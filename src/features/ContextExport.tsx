@@ -58,14 +58,22 @@ export function ContextExport({
     setLoadingMemories(true);
     try {
       const page = await api.memories("", "", false, memoryOffset);
-      const matching = page.items.filter((m) => m.scope === "global" ||
-        (m.scope === "project" && m.project === context.project) ||
-        (m.scope === "agent" && m.agents.includes(context.source_agent)));
-      setMemories((existing) => [...new Map([...existing, ...matching].map((m) => [m.id, m])).values()]);
+      const matching = page.items.filter(
+        (m) =>
+          m.scope === "global" ||
+          (m.scope === "project" && m.project === context.project) ||
+          (m.scope === "agent" && m.agents.includes(context.source_agent)),
+      );
+      setMemories((existing) => [
+        ...new Map([...existing, ...matching].map((m) => [m.id, m])).values(),
+      ]);
       setMemoryOffset((offset) => offset + page.items.length);
       setMemoryTotal(page.items.length ? page.total : memoryOffset);
-    } catch (e) { setError(errorMessage(e)); }
-    finally { setLoadingMemories(false); }
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setLoadingMemories(false);
+    }
   }
   async function exportFile() {
     if (!context) return;
@@ -74,17 +82,25 @@ export function ContextExport({
     try {
       if (
         await saveText(
-          format === "json" ? JSON.stringify({
-            format: "agenthub.context",
-            version: 1,
-            target_agent: target,
-            context,
-            memories: memories.filter((m) => selectedMemoryIds.includes(m.id)),
-          }, null, 2) : formatContext(
-            context,
-            target,
-            memories.filter((m) => selectedMemoryIds.includes(m.id)),
-          ),
+          format === "json"
+            ? JSON.stringify(
+                {
+                  format: "agenthub.context",
+                  version: 1,
+                  target_agent: target,
+                  context,
+                  memories: memories.filter((m) =>
+                    selectedMemoryIds.includes(m.id),
+                  ),
+                },
+                null,
+                2,
+              )
+            : formatContext(
+                context,
+                target,
+                memories.filter((m) => selectedMemoryIds.includes(m.id)),
+              ),
           format === "json" ? "agenthub-context.json" : "agenthub-context.md",
         )
       )
@@ -193,9 +209,16 @@ export function ContextExport({
             </p>
           )}
           <div className="context-metadata">
-            <p><strong>Project:</strong> {context.project || "Not recorded"}</p>
-            <p><strong>Repository:</strong> {context.repository || "Not detected"}</p>
-            <p><strong>Git diff:</strong> {context.git_diff}</p>
+            <p>
+              <strong>Project:</strong> {context.project || "Not recorded"}
+            </p>
+            <p>
+              <strong>Repository:</strong>{" "}
+              {context.repository || "Not detected"}
+            </p>
+            <p>
+              <strong>Git diff:</strong> {context.git_diff}
+            </p>
           </div>
           {(memories.length > 0 || memoryOffset < memoryTotal) && (
             <fieldset className="context-memories">
@@ -221,7 +244,11 @@ export function ContextExport({
                 </label>
               ))}
               {memoryOffset < memoryTotal && (
-                <Button variant="outline" disabled={loadingMemories} onClick={() => void loadMoreMemories()}>
+                <Button
+                  variant="outline"
+                  disabled={loadingMemories}
+                  onClick={() => void loadMoreMemories()}
+                >
                   {loadingMemories ? "Loading memories…" : "Load more memories"}
                 </Button>
               )}
@@ -244,7 +271,13 @@ export function ContextExport({
           )}
           <footer>
             <label htmlFor="context-format">Export format</label>
-            <select id="context-format" value={format} onChange={(event) => setFormat(event.target.value as "markdown" | "json")}>
+            <select
+              id="context-format"
+              value={format}
+              onChange={(event) =>
+                setFormat(event.target.value as "markdown" | "json")
+              }
+            >
               <option value="markdown">Markdown</option>
               <option value="json">JSON</option>
             </select>
