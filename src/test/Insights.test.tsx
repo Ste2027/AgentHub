@@ -16,7 +16,7 @@ beforeEach(() => {
     session_id: "s",
     title: "Fix login",
     project: "/p",
-    repository: "",
+    repository: "/repo",
     git_diff: "Not collected",
     source_agent: "claude",
     task: "Fix login",
@@ -45,6 +45,8 @@ it("exports edited context with the chosen target and source caveats", async () 
   expect(markdown).toContain("Target: Cursor");
   expect(markdown).toContain("Fix login and add regression coverage");
   expect(markdown).toContain("execution is not inferred");
+  expect(markdown).toContain("Repository: /repo");
+  expect(markdown).toContain("## Git diff");
   expect(await screen.findByRole("status")).toHaveTextContent(
     "Context exported",
   );
