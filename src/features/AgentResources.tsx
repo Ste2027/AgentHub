@@ -3,6 +3,7 @@ import { api, desktop } from "@/lib/api";
 import type { McpServer, Skill } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Empty } from "@/components/Empty";
+import { saveText } from "@/lib/files";
 
 export function SkillsPage() {
   const [items, setItems] = useState<Skill[]>([]);
@@ -14,6 +15,8 @@ export function SkillsPage() {
     editing: boolean;
   } | null>(null);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [agent, setAgent] = useState("");
   useEffect(() => {
     if (desktop)
       api
@@ -21,6 +24,14 @@ export function SkillsPage() {
         .then(setItems)
         .catch(() => setError("Could not read local skills."));
   }, []);
+  async function exportSkill(path: string, name: string) {
+    try {
+      const file = await api.skillContent(path);
+      await saveText(file.text, `${name}-SKILL.md`);
+    } catch {
+      setError("Could not export this skill.");
+    }
+  }
   if (!desktop)
     return (
       <div className="panel">
@@ -42,6 +53,23 @@ export function SkillsPage() {
         </div>
         <span className="badge">{items.length} discovered</span>
       </div>
+      <div className="resource-filters">
+        <input
+          aria-label="Search skills"
+          placeholder="Search skills…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <select
+          aria-label="Filter skills by agent"
+          value={agent}
+          onChange={(e) => setAgent(e.target.value)}
+        >
+          <option value="">All agents</option>
+          <option value="claude">Claude Code</option>
+          <option value="codex">OpenAI Codex</option>
+        </select>
+      </div>
       {error && (
         <p role="alert" className="error">
           {error}
@@ -49,45 +77,60 @@ export function SkillsPage() {
       )}
       {items.length ? (
         <div className="resource-list">
-          {items.map((s) => (
-            <article
-              className="resource-row"
-              key={`${s.agent}:${s.scope}:${s.path}`}
-            >
-              <div>
-                <h3>{s.name}</h3>
-                <p>{s.description || "No description in frontmatter."}</p>
-                <small>
-                  {s.agent} · {s.scope} · {s.path}
-                  {s.modified_at ? ` · updated ${s.modified_at}` : ""}
-                  {s.files.length
-                    ? ` · ${s.files.length} associated files`
-                    : ""}
-                </small>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!s.readable}
-                onClick={() =>
-                  api
-                    .skillContent(s.path)
-                    .then((file) =>
-                      setOpen({
-                        name: s.name,
-                        path: s.path,
-                        text: file.text,
-                        hash: file.hash,
-                        editing: false,
-                      }),
-                    )
-                    .catch(() => setError("Could not read this skill."))
-                }
+          {items
+            .filter(
+              (s) =>
+                `${s.name} ${s.description} ${s.path}`
+                  .toLocaleLowerCase()
+                  .includes(query.toLocaleLowerCase()) &&
+                (!agent || s.agent === agent),
+            )
+            .map((s) => (
+              <article
+                className="resource-row"
+                key={`${s.agent}:${s.scope}:${s.path}`}
               >
-                Review
-              </Button>
-            </article>
-          ))}
+                <div>
+                  <h3>{s.name}</h3>
+                  <p>{s.description || "No description in frontmatter."}</p>
+                  <small>
+                    {s.agent} · {s.scope} · {s.path}
+                    {s.modified_at ? ` · updated ${s.modified_at}` : ""}
+                    {s.files.length
+                      ? ` · ${s.files.length} associated files`
+                      : ""}
+                  </small>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!s.readable}
+                  onClick={() =>
+                    api
+                      .skillContent(s.path)
+                      .then((file) =>
+                        setOpen({
+                          name: s.name,
+                          path: s.path,
+                          text: file.text,
+                          hash: file.hash,
+                          editing: false,
+                        }),
+                      )
+                      .catch(() => setError("Could not read this skill."))
+                  }
+                >
+                  Review
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => void exportSkill(s.path, s.name)}
+                >
+                  Export
+                </Button>
+              </article>
+            ))}
         </div>
       ) : (
         <Empty

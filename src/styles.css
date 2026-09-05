@@ -1247,6 +1247,14 @@ select {
   display: grid;
   gap: 10px;
 }
+.resource-filters {
+  display: flex;
+  gap: 10px;
+  margin: 16px 0;
+}
+.resource-filters input {
+  flex: 1;
+}
 .resource-row {
   display: flex;
   align-items: center;
