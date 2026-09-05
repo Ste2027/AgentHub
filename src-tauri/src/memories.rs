@@ -129,7 +129,7 @@ fn insert(conn: &Connection, draft: &MemoryDraft) -> Result<String> {
 }
 impl Database {
     pub fn search_memories(&self, fts_query: &str) -> Result<Vec<crate::models::SearchHit>> {
-        let mut stmt=self.conn.prepare("SELECT m.id,m.title,m.project,substr(m.body,1,400) FROM library_search f JOIN memories m ON m.id=f.id WHERE library_search MATCH ?1 AND f.kind='memory' AND m.deleted_at IS NULL ORDER BY rank LIMIT 40").map_err(|e|e.to_string())?;
+        let mut stmt=self.conn.prepare("SELECT m.id,m.title,m.project,substr(m.body,1,400),m.updated_at FROM library_search f JOIN memories m ON m.id=f.id WHERE library_search MATCH ?1 AND f.kind='memory' AND m.deleted_at IS NULL ORDER BY rank LIMIT 40").map_err(|e|e.to_string())?;
         let rows = stmt
             .query_map([fts_query], |r| {
                 Ok(crate::models::SearchHit {
@@ -142,6 +142,7 @@ impl Database {
                     text: r.get(3)?,
                     kind: "memory".into(),
                     ordinal: 0,
+                    updated_at: r.get(4)?,
                 })
             })
             .map_err(|e| e.to_string())?;

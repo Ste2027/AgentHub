@@ -62,6 +62,7 @@ pub struct SearchHit {
     pub text: String,
     pub kind: String,
     pub ordinal: usize,
+    pub updated_at: String,
 }
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct IndexProgress {

@@ -138,10 +138,25 @@ impl Database {
         tx.execute("DELETE FROM projects WHERE NOT EXISTS (SELECT 1 FROM sessions WHERE sessions.project=projects.path)",[]).map_err(|e|e.to_string())?;
         tx.commit().map_err(|e| e.to_string())
     }
-    pub fn sessions(&self, agent: &str, project: &str, offset: usize) -> Result<Vec<Session>> {
-        let mut stmt = self.conn.prepare("SELECT id,agent,source_id,source,project,title,updated_at,model,event_count,warnings FROM sessions WHERE (?1='' OR agent=?1) AND (?2='' OR project=?2) ORDER BY updated_at DESC,id LIMIT 100 OFFSET ?3").map_err(|e|e.to_string())?;
+    pub fn sessions(
+        &self,
+        agent: &str,
+        project: &str,
+        date_from: &str,
+        date_to: &str,
+        model: &str,
+        sort: &str,
+        offset: usize,
+    ) -> Result<Vec<Session>> {
+        if !matches!(sort, "newest" | "oldest") {
+            return Err("Unsupported session sort order".into());
+        }
+        let mut stmt = self.conn.prepare("SELECT id,agent,source_id,source,project,title,updated_at,model,event_count,warnings FROM sessions WHERE (?1='' OR agent=?1) AND (?2='' OR project=?2) AND (?3='' OR substr(updated_at,1,10)>=?3) AND (?4='' OR substr(updated_at,1,10)<=?4) AND (?5='' OR lower(model) LIKE '%'||lower(?5)||'%') ORDER BY CASE WHEN ?6='oldest' THEN updated_at END ASC,CASE WHEN ?6='newest' THEN updated_at END DESC,id LIMIT 100 OFFSET ?7").map_err(|e|e.to_string())?;
         let rows = stmt
-            .query_map(params![agent, project, offset], read_session)
+            .query_map(
+                params![agent, project, date_from, date_to, model, sort, offset],
+                read_session,
+            )
             .map_err(|e| e.to_string())?;
         rows.collect::<rusqlite::Result<_>>()
             .map_err(|e| e.to_string())
@@ -177,7 +192,7 @@ impl Database {
         if terms.is_empty() {
             return Ok(Vec::new());
         }
-        let mut stmt = self.conn.prepare("SELECT s.id,s.title,s.agent,s.project,substr(COALESCE(e.text,s.title),1,400),COALESCE(e.kind,'session'),max(CAST(f.ordinal AS INTEGER),0) FROM search_index f JOIN sessions s ON s.id=f.session_id LEFT JOIN events e ON e.session_id=f.session_id AND e.ordinal=CAST(f.ordinal AS INTEGER) WHERE search_index MATCH ?1 ORDER BY rank LIMIT 80").map_err(|e|e.to_string())?;
+        let mut stmt = self.conn.prepare("SELECT s.id,s.title,s.agent,s.project,substr(COALESCE(e.text,s.title),1,400),COALESCE(e.kind,'session'),max(CAST(f.ordinal AS INTEGER),0),s.updated_at FROM search_index f JOIN sessions s ON s.id=f.session_id LEFT JOIN events e ON e.session_id=f.session_id AND e.ordinal=CAST(f.ordinal AS INTEGER) WHERE search_index MATCH ?1 ORDER BY rank LIMIT 80").map_err(|e|e.to_string())?;
         let rows = stmt
             .query_map([terms.join(" AND ")], |r| {
                 Ok(SearchHit {
@@ -190,6 +205,7 @@ impl Database {
                     text: r.get(4)?,
                     kind: r.get(5)?,
                     ordinal: r.get(6)?,
+                    updated_at: r.get(7)?,
                 })
             })
             .map_err(|e| e.to_string())?;

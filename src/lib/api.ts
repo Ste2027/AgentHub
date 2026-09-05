@@ -74,8 +74,8 @@ export const api = {
   settings: () => call<Settings>("get_settings"),
   saveSettings: (settings: Settings) =>
     call<void>("save_settings", { settings }),
-  sessions: (agent = "", project = "", offset = 0) =>
-    call<Session[]>("list_sessions", { agent, project, offset }),
+  sessions: (agent = "", project = "", dateFrom = "", dateTo = "", model = "", sort = "newest", offset = 0) =>
+    call<Session[]>("list_sessions", { agent, project, dateFrom, dateTo, model, sort, offset }),
   events: (sessionId: string, offset = 0) =>
     call<TimelineEvent[]>("session_events", { sessionId, offset }),
   projects: () => call<Project[]>("list_projects"),

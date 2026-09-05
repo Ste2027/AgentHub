@@ -106,7 +106,10 @@ fn database_import_is_idempotent_and_search_updates() {
     let mut p = parse("claude", CLAUDE);
     d.import(&p, "1").unwrap();
     d.import(&p, "1").unwrap();
-    assert_eq!(d.sessions("", "", 0).unwrap().len(), 1);
+    assert_eq!(
+        d.sessions("", "", "", "", "", "newest", 0).unwrap().len(),
+        1
+    );
     assert_eq!(d.events(&p.session.id, 0).unwrap().len(), 4);
     assert!(!d.search("authentication").unwrap().is_empty());
     assert!(!d.search("npm test").unwrap().is_empty());
@@ -125,7 +128,10 @@ fn search_treats_fts_syntax_as_literal_text() {
     for query in ["", "\"", "OR", "*", "NEAR(foo)", "' OR 1=1; --"] {
         assert!(d.search(query).is_ok(), "{query}");
     }
-    assert_eq!(d.sessions("", "", 0).unwrap().len(), 1);
+    assert_eq!(
+        d.sessions("", "", "", "", "", "newest", 0).unwrap().len(),
+        1
+    );
 }
 #[test]
 fn project_and_agent_filters_work() {
@@ -135,8 +141,33 @@ fn project_and_agent_filters_work() {
     c.session.source = "/different/path".into();
     d.import(&c, "1").unwrap();
     assert_eq!(d.projects().unwrap()[0].sessions, 2);
-    assert_eq!(d.sessions("codex", "", 0).unwrap().len(), 1);
-    assert!(d.sessions("", "/absent", 0).unwrap().is_empty());
+    assert_eq!(
+        d.sessions("codex", "", "", "", "", "newest", 0)
+            .unwrap()
+            .len(),
+        1
+    );
+    assert!(d
+        .sessions("", "/absent", "", "", "", "newest", 0)
+        .unwrap()
+        .is_empty());
+    assert_eq!(
+        d.sessions("", "", "", "", "codex-test", "newest", 0)
+            .unwrap()
+            .len(),
+        1
+    );
+    assert_eq!(
+        d.sessions("", "", "2026-09-01", "2026-09-01", "", "oldest", 0)
+            .unwrap()
+            .len(),
+        2
+    );
+    assert!(d
+        .sessions("", "", "2026-09-02", "", "", "newest", 0)
+        .unwrap()
+        .is_empty());
+    assert!(d.sessions("", "", "", "", "", "sideways", 0).is_err());
 }
 #[test]
 fn failed_import_rolls_back_old_events_and_search() {
@@ -189,7 +220,10 @@ fn indexer_skips_unchanged_and_recovers_corrupt_files() {
     std::fs::write(source.join("bad.jsonl"), CLAUDE).unwrap();
     let next = indexer::run(&mut d, false, |_| {}).unwrap();
     assert_eq!((next.indexed, next.failed), (1, 0));
-    assert_eq!(d.sessions("", "", 0).unwrap().len(), 2);
+    assert_eq!(
+        d.sessions("", "", "", "", "", "newest", 0).unwrap().len(),
+        2
+    );
     let forced = indexer::run(&mut d, true, |_| {}).unwrap();
     assert_eq!(forced.indexed, 2);
 }

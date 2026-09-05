@@ -94,7 +94,9 @@ export function App() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selected, setSelected] = useState<Session | null>(null);
-  const [resourceSelection, setResourceSelection] = useState<SearchHit | null>(null);
+  const [resourceSelection, setResourceSelection] = useState<SearchHit | null>(
+    null,
+  );
   const [ordinal, setOrdinal] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
   const [error, setError] = useState("");
@@ -103,6 +105,10 @@ export function App() {
   const [progress, setProgress] = useState<IndexProgress | null>(null);
   const [agentFilter, setAgentFilter] = useState("");
   const [projectFilter, setProjectFilter] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [modelFilter, setModelFilter] = useState("");
+  const [sessionSort, setSessionSort] = useState("newest");
   const [offset, setOffset] = useState(0);
   const [revision, setRevision] = useState(0);
   const [memoryDirty, setMemoryDirty] = useState(false);
@@ -120,7 +126,15 @@ export function App() {
     setLoading(true);
     Promise.all([
       api.overview(),
-      api.sessions(agentFilter, projectFilter, offset),
+      api.sessions(
+        agentFilter,
+        projectFilter,
+        dateFrom,
+        dateTo,
+        modelFilter,
+        sessionSort,
+        offset,
+      ),
       api.projects(),
     ])
       .then(([o, s, p]) => {
@@ -139,7 +153,16 @@ export function App() {
     return () => {
       active = false;
     };
-  }, [revision, agentFilter, projectFilter, offset]);
+  }, [
+    revision,
+    agentFilter,
+    projectFilter,
+    dateFrom,
+    dateTo,
+    modelFilter,
+    sessionSort,
+    offset,
+  ]);
   useEffect(() => {
     if (desktop)
       api
@@ -189,6 +212,10 @@ export function App() {
     setOffset(0);
     setAgentFilter("");
     setProjectFilter("");
+    setDateFrom("");
+    setDateTo("");
+    setModelFilter("");
+    setSessionSort("newest");
   };
   async function index(force = false) {
     setBusy(true);
@@ -219,6 +246,13 @@ export function App() {
         id: hit.entity_id!,
         key: (old?.key ?? 0) + 1,
       }));
+      return;
+    }
+    if (hit.entity_type === "project" && hit.entity_id) {
+      setSelected(null);
+      setProjectFilter(hit.entity_id);
+      setOffset(0);
+      setPage("sessions");
       return;
     }
     if (hit.entity_type === "skill" || hit.entity_type === "mcp") {
@@ -265,7 +299,9 @@ export function App() {
         <button className="search-trigger" onClick={() => setSearchOpen(true)}>
           <SearchIcon size={15} />
           <span>Search anything</span>
-          <kbd>{/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘ K" : "Ctrl K"}</kbd>
+          <kbd>
+            {/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘ K" : "Ctrl K"}
+          </kbd>
         </button>
         <div className="nav-label">WORKSPACE</div>
         <nav>
@@ -414,6 +450,14 @@ export function App() {
                   setAgentFilter={setAgentFilter}
                   projectFilter={projectFilter}
                   setProjectFilter={setProjectFilter}
+                  dateFrom={dateFrom}
+                  setDateFrom={setDateFrom}
+                  dateTo={dateTo}
+                  setDateTo={setDateTo}
+                  modelFilter={modelFilter}
+                  setModelFilter={setModelFilter}
+                  sessionSort={sessionSort}
+                  setSessionSort={setSessionSort}
                   offset={offset}
                   setOffset={setOffset}
                   projects={projects}
@@ -456,7 +500,9 @@ export function App() {
                 />
               )}
               {page === "analytics" && <Analytics revision={revision} />}
-              {page === "skills" && <SkillsPage selection={resourceSelection} />}
+              {page === "skills" && (
+                <SkillsPage selection={resourceSelection} />
+              )}
               {page === "mcp" && <McpPage selection={resourceSelection} />}
               {page === "marketplace" && <MarketplacePage />}
             </>

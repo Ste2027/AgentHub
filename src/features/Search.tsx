@@ -2,7 +2,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useState } from "react";
 import { Search as SearchIcon, X, ArrowUpRight } from "lucide-react";
 import { api, desktop } from "@/lib/api";
-import { basename, errorMessage } from "@/lib/utils";
+import { basename, date, errorMessage } from "@/lib/utils";
 import type { SearchHit } from "@/lib/types";
 export function Search({
   open,
@@ -31,10 +31,29 @@ export function Search({
         api.search(query),
         api.skills().catch(() => []),
         api.mcpServers().catch(() => []),
+        api.projects().catch(() => []),
       ])
-        .then(([data, skills, mcp]) => {
+        .then(([data, skills, mcp, projects]) => {
           const q = query.toLocaleLowerCase();
           const resourceHits: SearchHit[] = [
+            ...projects
+              .filter((p) =>
+                `${p.name} ${p.path} ${p.agents}`
+                  .toLocaleLowerCase()
+                  .includes(q),
+              )
+              .map((p) => ({
+                entity_type: "project" as const,
+                entity_id: p.path,
+                session_id: "",
+                title: p.name,
+                agent: p.agents,
+                project: p.path,
+                text: p.path,
+                kind: "project",
+                ordinal: 0,
+                updated_at: p.updated_at,
+              })),
             ...skills
               .filter((s) =>
                 `${s.name} ${s.description} ${s.agent} ${s.path}`
@@ -51,6 +70,7 @@ export function Search({
                 text: s.description || s.path,
                 kind: "skill" as const,
                 ordinal: 0,
+                updated_at: s.modified_at,
               })),
             ...mcp
               .filter((s) =>
@@ -131,6 +151,7 @@ export function Search({
                         : basename(hit.project)}
                       {hit.agent && ` · ${hit.agent}`} ·{" "}
                       {hit.kind.replaceAll("_", " ")}
+                      {hit.updated_at && ` · ${date(hit.updated_at)}`}
                     </small>
                     <p>{hit.text}</p>
                   </span>

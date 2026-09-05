@@ -50,9 +50,18 @@ async fn list_sessions(
     state: State<'_, AppState>,
     agent: String,
     project: String,
+    date_from: String,
+    date_to: String,
+    model: String,
+    sort: String,
     offset: usize,
 ) -> Result<Vec<Session>, String> {
-    with_db(&state, move |db| db.sessions(&agent, &project, offset)).await
+    with_db(&state, move |db| {
+        db.sessions(
+            &agent, &project, &date_from, &date_to, &model, &sort, offset,
+        )
+    })
+    .await
 }
 #[tauri::command]
 async fn get_session(

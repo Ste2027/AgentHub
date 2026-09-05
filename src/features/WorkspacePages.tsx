@@ -40,9 +40,16 @@ export function OverviewPage({
 }) {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   useEffect(() => {
-    if (desktop) api.analytics().then(setAnalytics).catch(() => undefined);
+    if (desktop)
+      api
+        .analytics()
+        .then(setAnalytics)
+        .catch(() => undefined);
   }, []);
-  const toolCalls = analytics?.tools.reduce((total, metric) => total + metric.count, 0);
+  const toolCalls = analytics?.tools.reduce(
+    (total, metric) => total + metric.count,
+    0,
+  );
   return (
     <>
       <section className="hero-panel">
@@ -142,8 +149,14 @@ export function OverviewPage({
       </section>
       <section className="panel">
         <div className="section-heading">
-          <h2>Recent projects <span className="subtle-badge">LOCAL WORK</span></h2>
-          <Button variant="ghost" size="sm" onClick={() => navigate("projects")}>
+          <h2>
+            Recent projects <span className="subtle-badge">LOCAL WORK</span>
+          </h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("projects")}
+          >
             View all <ArrowUpRight size={14} />
           </Button>
         </div>
@@ -176,6 +189,14 @@ export function SessionsPage({
   setAgentFilter,
   projectFilter,
   setProjectFilter,
+  dateFrom,
+  setDateFrom,
+  dateTo,
+  setDateTo,
+  modelFilter,
+  setModelFilter,
+  sessionSort,
+  setSessionSort,
   offset,
   setOffset,
   projects,
@@ -188,6 +209,14 @@ export function SessionsPage({
   setAgentFilter: (v: string) => void;
   projectFilter: string;
   setProjectFilter: (v: string) => void;
+  dateFrom: string;
+  setDateFrom: (v: string) => void;
+  dateTo: string;
+  setDateTo: (v: string) => void;
+  modelFilter: string;
+  setModelFilter: (v: string) => void;
+  sessionSort: string;
+  setSessionSort: (v: string) => void;
   offset: number;
   setOffset: (v: number) => void;
   projects: Project[];
@@ -226,7 +255,52 @@ export function SessionsPage({
             </option>
           ))}
         </select>
-        <span>Most recent first</span>
+        <input
+          aria-label="Filter by model"
+          placeholder="Model contains…"
+          value={modelFilter}
+          onChange={(e) => {
+            setModelFilter(e.target.value);
+            setOffset(0);
+          }}
+        />
+        <label className="compact-filter">
+          From{" "}
+          <input
+            aria-label="Sessions from date"
+            type="date"
+            value={dateFrom}
+            max={dateTo || undefined}
+            onChange={(e) => {
+              setDateFrom(e.target.value);
+              setOffset(0);
+            }}
+          />
+        </label>
+        <label className="compact-filter">
+          To{" "}
+          <input
+            aria-label="Sessions to date"
+            type="date"
+            value={dateTo}
+            min={dateFrom || undefined}
+            onChange={(e) => {
+              setDateTo(e.target.value);
+              setOffset(0);
+            }}
+          />
+        </label>
+        <select
+          aria-label="Sort sessions"
+          value={sessionSort}
+          onChange={(e) => {
+            setSessionSort(e.target.value);
+            setOffset(0);
+          }}
+        >
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+        </select>
       </div>
       {loading ? (
         <p className="loading">Loading sessions…</p>

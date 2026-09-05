@@ -47,7 +47,7 @@ export interface Overview {
   database_path: string;
 }
 export interface SearchHit {
-  entity_type?: "session" | "memory" | "skill" | "mcp";
+  entity_type?: "session" | "project" | "memory" | "skill" | "mcp";
   entity_id?: string;
   session_id: string;
   title: string;
@@ -56,6 +56,7 @@ export interface SearchHit {
   text: string;
   kind: string;
   ordinal: number;
+  updated_at?: string;
 }
 export interface IndexProgress {
   scanned: number;

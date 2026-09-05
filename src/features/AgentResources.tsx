@@ -33,13 +33,32 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
   const [query, setQuery] = useState("");
   const [agent, setAgent] = useState("");
   useEffect(() => {
-    if (!desktop || selection?.entity_type !== "skill" || !selection.entity_id) return;
+    if (!desktop || selection?.entity_type !== "skill" || !selection.entity_id)
+      return;
     let active = true;
     const path = selection.entity_id;
-    api.skillContent(path).then((file) => {
-      if (active) setOpen({ name: selection.title, path, text: file.text, original: file.text, hash: file.hash, editing: false });
-    }).catch(() => { if (active) setError("This skill could not be opened. It may have moved or become unreadable."); });
-    return () => { active = false; };
+    api
+      .skillContent(path)
+      .then((file) => {
+        if (active)
+          setOpen({
+            name: selection.title,
+            path,
+            text: file.text,
+            original: file.text,
+            hash: file.hash,
+            editing: false,
+          });
+      })
+      .catch(() => {
+        if (active)
+          setError(
+            "This skill could not be opened. It may have moved or become unreadable.",
+          );
+      });
+    return () => {
+      active = false;
+    };
   }, [selection]);
   useEffect(() => {
     if (desktop)
@@ -78,8 +97,8 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
         <div>
           <h2>Skills</h2>
           <p className="muted">
-            Local SKILL.md folders discovered for Claude Code and Codex.
-            Review files and explicitly apply changes. AgentHub never runs skills.
+            Local SKILL.md folders discovered for Claude Code and Codex. Review
+            files and explicitly apply changes. AgentHub never runs skills.
           </p>
         </div>
         <span className="badge">{items.length} discovered</span>
@@ -103,17 +122,28 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
         <Button
           variant="outline"
           onClick={async () => {
-            const source = window.prompt("Absolute path to an existing SKILL.md:");
-            const destination = source && window.prompt("Absolute destination skills directory:");
+            const source = window.prompt(
+              "Absolute path to an existing SKILL.md:",
+            );
+            const destination =
+              source && window.prompt("Absolute destination skills directory:");
             if (!source || !destination) return;
             try {
               const file = await api.skillContent(source);
-              const name = source.split(/[\\/]/).slice(-2, -1)[0] || "imported-skill";
-              if (!window.confirm(`Import ${name} into ${destination}? Only SKILL.md will be copied.`)) return;
+              const name =
+                source.split(/[\\/]/).slice(-2, -1)[0] || "imported-skill";
+              if (
+                !window.confirm(
+                  `Import ${name} into ${destination}? Only SKILL.md will be copied.`,
+                )
+              )
+                return;
               await api.installSkill(name, file.text, destination);
               await reloadSkills();
             } catch (e) {
-              setError(e instanceof Error ? e.message : "Could not import this skill.");
+              setError(
+                e instanceof Error ? e.message : "Could not import this skill.",
+              );
             }
           }}
         >
@@ -122,14 +152,27 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
         <Button
           variant="ghost"
           onClick={async () => {
-            const backup = window.prompt("Absolute path to an AgentHub skill backup:");
-            const target = backup && window.prompt("Absolute path to the destination SKILL.md:");
-            if (!backup || !target || !window.confirm("Restore this skill backup?")) return;
+            const backup = window.prompt(
+              "Absolute path to an AgentHub skill backup:",
+            );
+            const target =
+              backup &&
+              window.prompt("Absolute path to the destination SKILL.md:");
+            if (
+              !backup ||
+              !target ||
+              !window.confirm("Restore this skill backup?")
+            )
+              return;
             try {
               await api.restoreSkill(target, backup);
               await reloadSkills();
             } catch (e) {
-              setError(e instanceof Error ? e.message : "Could not restore this skill.");
+              setError(
+                e instanceof Error
+                  ? e.message
+                  : "Could not restore this skill.",
+              );
             }
           }}
         >
@@ -197,12 +240,17 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
                       "Absolute destination skills directory (for example ~/.agents/skills):",
                     );
                     if (!destination) return;
-                    if (!window.confirm(`Copy ${s.name} to ${destination}?`)) return;
+                    if (!window.confirm(`Copy ${s.name} to ${destination}?`))
+                      return;
                     api
                       .copySkill(s.path, destination)
                       .then(() => reloadSkills())
                       .catch((e) =>
-                        setError(e instanceof Error ? e.message : "Could not copy this skill."),
+                        setError(
+                          e instanceof Error
+                            ? e.message
+                            : "Could not copy this skill.",
+                        ),
                       );
                   }}
                 >
@@ -212,12 +260,17 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
                   variant="ghost"
                   size="sm"
                   onClick={() => {
-                    if (!window.confirm(`Move ${s.name} to AgentHub trash?`)) return;
+                    if (!window.confirm(`Move ${s.name} to AgentHub trash?`))
+                      return;
                     api
                       .deleteSkill(s.path)
                       .then(() => reloadSkills())
                       .catch((e) =>
-                        setError(e instanceof Error ? e.message : "Could not remove this skill."),
+                        setError(
+                          e instanceof Error
+                            ? e.message
+                            : "Could not remove this skill.",
+                        ),
                       );
                   }}
                 >
@@ -349,15 +402,35 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
     original: string;
     hash: string;
     editing: boolean;
+    server?: string;
   } | null>(null);
   useEffect(() => {
-    if (!desktop || selection?.entity_type !== "mcp" || !selection.entity_id) return;
+    if (!desktop || selection?.entity_type !== "mcp" || !selection.entity_id)
+      return;
     let active = true;
     const path = selection.entity_id;
-    api.mcpConfig(path).then((file) => {
-      if (active) setOpen({ path, text: file.text, original: file.text, hash: file.hash, editing: false });
-    }).catch(() => { if (active) setError("This MCP configuration could not be opened. It may have moved or become unreadable."); });
-    return () => { active = false; };
+    api
+      .mcpConfig(path)
+      .then((file) => {
+        if (active)
+          setOpen({
+            path,
+            text: file.text,
+            original: file.text,
+            hash: file.hash,
+            editing: false,
+            server: selection.title,
+          });
+      })
+      .catch(() => {
+        if (active)
+          setError(
+            "This MCP configuration could not be opened. It may have moved or become unreadable.",
+          );
+      });
+    return () => {
+      active = false;
+    };
   }, [selection]);
   useEffect(() => {
     if (desktop)
@@ -388,24 +461,39 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
         <div>
           <h2>MCP servers</h2>
           <p className="muted">
-            Review Claude and Codex configuration and explicitly edit supported formats. AgentHub never
-            starts a server, connects to it or reveals secret values.
+            Review Claude and Codex configuration and explicitly edit supported
+            formats. AgentHub never starts a server, connects to it or reveals
+            secret values.
           </p>
         </div>
         <span className="badge">{items.length} discovered</span>
         <Button
           variant="outline"
           onClick={async () => {
-            const path = window.prompt("Absolute JSON MCP config path to update:");
+            const path = window.prompt(
+              "Absolute JSON MCP config path to update:",
+            );
             const name = path && window.prompt("New server name:");
-            const config = name && window.prompt('Server JSON, for example {"command":"npx","args":[]}');
-            if (!path || !name || !config || !window.confirm(`Add ${name} to this MCP config?`)) return;
+            const config =
+              name &&
+              window.prompt(
+                'Server JSON, for example {"command":"npx","args":[]}',
+              );
+            if (
+              !path ||
+              !name ||
+              !config ||
+              !window.confirm(`Add ${name} to this MCP config?`)
+            )
+              return;
             try {
               const file = await api.mcpConfig(path);
               await api.addMcpServer(path, name, config, file.hash);
               await reloadMcp();
             } catch (e) {
-              setError(e instanceof Error ? e.message : "Could not add this server.");
+              setError(
+                e instanceof Error ? e.message : "Could not add this server.",
+              );
             }
           }}
         >
@@ -432,7 +520,10 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
                   {s.args.length ? ` · ${s.args.length} args` : ""}
                 </small>
                 {s.env_keys.length > 0 && (
-                  <div className="secret-list" aria-label="Masked environment variables">
+                  <div
+                    className="secret-list"
+                    aria-label="Masked environment variables"
+                  >
                     {s.env_keys.map((key) => (
                       <code key={key}>{key} = ••••••••</code>
                     ))}
@@ -479,13 +570,26 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
                 size="sm"
                 onClick={async () => {
                   const newName = window.prompt(`Duplicate ${s.name} as:`);
-                  if (!newName || !window.confirm(`Duplicate ${s.name} as ${newName}?`)) return;
+                  if (
+                    !newName ||
+                    !window.confirm(`Duplicate ${s.name} as ${newName}?`)
+                  )
+                    return;
                   try {
                     const file = await api.mcpConfig(s.config_path);
-                    await api.duplicateMcpServer(s.config_path, s.name, newName, file.hash);
+                    await api.duplicateMcpServer(
+                      s.config_path,
+                      s.name,
+                      newName,
+                      file.hash,
+                    );
                     await reloadMcp();
                   } catch (e) {
-                    setError(e instanceof Error ? e.message : "Could not duplicate this server.");
+                    setError(
+                      e instanceof Error
+                        ? e.message
+                        : "Could not duplicate this server.",
+                    );
                   }
                 }}
               >
@@ -498,12 +602,22 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
                   const destination = window.prompt(
                     "Absolute destination JSON config path for this server:",
                   );
-                  if (!destination || !window.confirm(`Copy ${s.name} to ${destination}?`)) return;
+                  if (
+                    !destination ||
+                    !window.confirm(`Copy ${s.name} to ${destination}?`)
+                  )
+                    return;
                   try {
                     await api.copyMcpServer(s.config_path, s.name, destination);
-                    setError("MCP server copied. Reopen the target agent to load its config.");
+                    setError(
+                      "MCP server copied. Reopen the target agent to load its config.",
+                    );
                   } catch (e) {
-                    setError(e instanceof Error ? e.message : "Could not copy this server.");
+                    setError(
+                      e instanceof Error
+                        ? e.message
+                        : "Could not copy this server.",
+                    );
                   }
                 }}
               >
@@ -513,13 +627,27 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
                 variant="ghost"
                 size="sm"
                 onClick={async () => {
-                  if (!window.confirm(`${s.enabled ? "Disable" : "Enable"} ${s.name}?`)) return;
+                  if (
+                    !window.confirm(
+                      `${s.enabled ? "Disable" : "Enable"} ${s.name}?`,
+                    )
+                  )
+                    return;
                   try {
                     const file = await api.mcpConfig(s.config_path);
-                    await api.setMcpEnabled(s.config_path, s.name, !s.enabled, file.hash);
+                    await api.setMcpEnabled(
+                      s.config_path,
+                      s.name,
+                      !s.enabled,
+                      file.hash,
+                    );
                     await reloadMcp();
                   } catch (e) {
-                    setError(e instanceof Error ? e.message : "Could not change this server.");
+                    setError(
+                      e instanceof Error
+                        ? e.message
+                        : "Could not change this server.",
+                    );
                   }
                 }}
               >
@@ -529,13 +657,18 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
                 variant="ghost"
                 size="sm"
                 onClick={async () => {
-                  if (!window.confirm(`Remove ${s.name} from this MCP config?`)) return;
+                  if (!window.confirm(`Remove ${s.name} from this MCP config?`))
+                    return;
                   try {
                     const file = await api.mcpConfig(s.config_path);
                     await api.removeMcpServer(s.config_path, s.name, file.hash);
                     await reloadMcp();
                   } catch (e) {
-                    setError(e instanceof Error ? e.message : "Could not remove this server.");
+                    setError(
+                      e instanceof Error
+                        ? e.message
+                        : "Could not remove this server.",
+                    );
                   }
                 }}
               >
@@ -553,7 +686,11 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
       {open && (
         <div className="resource-preview">
           <header>
-            <h3>Configuration preview</h3>
+            <h3>
+              {open.server
+                ? `${open.server} configuration`
+                : "Configuration preview"}
+            </h3>
             <div>
               <Button
                 variant="outline"
@@ -636,11 +773,13 @@ export function MarketplacePage() {
   >("browse");
   const [catalogQuery, setCatalogQuery] = useState("");
   const [installedSkills, setInstalledSkills] = useState<Skill[]>([]);
-  const [items, setItems] = useState<{
-    name: string;
-    url: string;
-    apiUrl: string;
-  }[]>([]);
+  const [items, setItems] = useState<
+    {
+      name: string;
+      url: string;
+      apiUrl: string;
+    }[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [readme, setReadme] = useState<{
@@ -654,7 +793,10 @@ export function MarketplacePage() {
   } | null>(null);
   useEffect(() => {
     if (view !== "installed" && view !== "updates") return;
-    void api.skills().then(setInstalledSkills).catch(() => setInstalledSkills([]));
+    void api
+      .skills()
+      .then(setInstalledSkills)
+      .catch(() => setInstalledSkills([]));
   }, [view]);
   async function browse() {
     const match = source
@@ -785,11 +927,20 @@ export function MarketplacePage() {
               {error}
             </p>
           )}
-          {view === "updates" && (
-            installedSkills.length ? (
-              <p className="muted">{installedSkills.length} installed skill{installedSkills.length === 1 ? "" : "s"} are ready for a source comparison. Version checks stay manual so no repository is contacted without your request.</p>
-            ) : <p className="muted">No installed skills yet. Install a reviewed package to track it here.</p>
-          )}
+          {view === "updates" &&
+            (installedSkills.length ? (
+              <p className="muted">
+                {installedSkills.length} installed skill
+                {installedSkills.length === 1 ? "" : "s"} are ready for a source
+                comparison. Version checks stay manual so no repository is
+                contacted without your request.
+              </p>
+            ) : (
+              <p className="muted">
+                No installed skills yet. Install a reviewed package to track it
+                here.
+              </p>
+            ))}
           {view === "browse" && (
             <input
               className="marketplace-filter"
@@ -799,18 +950,30 @@ export function MarketplacePage() {
               onChange={(e) => setCatalogQuery(e.target.value)}
             />
           )}
-          {view === "installed" && (
-            installedSkills.length ? (
+          {view === "installed" &&
+            (installedSkills.length ? (
               <div className="resource-list">
                 {installedSkills.map((skill) => (
-                  <article className="resource-row" key={`${skill.agent}:${skill.path}`}>
-                    <div><h3>{skill.name}</h3><small>{skill.agent} · {skill.scope} · {skill.path}</small></div>
+                  <article
+                    className="resource-row"
+                    key={`${skill.agent}:${skill.path}`}
+                  >
+                    <div>
+                      <h3>{skill.name}</h3>
+                      <small>
+                        {skill.agent} · {skill.scope} · {skill.path}
+                      </small>
+                    </div>
                     <span className="badge">Installed locally</span>
                   </article>
                 ))}
               </div>
-            ) : <p className="muted">No installed skills yet. Install a reviewed package to see it here.</p>
-          )}
+            ) : (
+              <p className="muted">
+                No installed skills yet. Install a reviewed package to see it
+                here.
+              </p>
+            ))}
           {view === "browse" && items.length > 0 && (
             <div className="resource-list">
               {items
@@ -845,20 +1008,49 @@ export function MarketplacePage() {
                             );
                           const t = await fetch(skill.download_url);
                           const text = await t.text();
-                          const frontmatter = text.match(/^---\s*([\s\S]*?)\s*---/);
+                          const frontmatter = text.match(
+                            /^---\s*([\s\S]*?)\s*---/,
+                          );
                           const field = (key: string) =>
                             frontmatter?.[1]
                               ?.split(/\r?\n/)
-                              .find((line) => line.trim().toLowerCase().startsWith(`${key}:`))
-                              ?.split(":").slice(1).join(":").trim().replace(/^['"]|['"]$/g, "") || "Unknown";
+                              .find((line) =>
+                                line.trim().toLowerCase().startsWith(`${key}:`),
+                              )
+                              ?.split(":")
+                              .slice(1)
+                              .join(":")
+                              .trim()
+                              .replace(/^['"]|['"]$/g, "") || "Unknown";
                           const names = entries.map((entry) => entry.name);
                           const warnings: string[] = [];
-                          if (names.some((name) => /\.(sh|bash|ps1|bat|cmd|exe|py|js|ts)$/i.test(name)))
-                            warnings.push("This package contains executable or script files.");
-                          if (/\b(mcpServers|\.mcp\.json|command\s*:)/i.test(text) || names.some((name) => /mcp/i.test(name)))
-                            warnings.push("This package references MCP configuration or commands.");
-                          if (/\b(curl|wget|invoke-webrequest|powershell|rm\s+-rf|format\s+c:)/i.test(text))
-                            warnings.push("The documentation contains shell commands; review them before use.");
+                          if (
+                            names.some((name) =>
+                              /\.(sh|bash|ps1|bat|cmd|exe|py|js|ts)$/i.test(
+                                name,
+                              ),
+                            )
+                          )
+                            warnings.push(
+                              "This package contains executable or script files.",
+                            );
+                          if (
+                            /\b(mcpServers|\.mcp\.json|command\s*:)/i.test(
+                              text,
+                            ) ||
+                            names.some((name) => /mcp/i.test(name))
+                          )
+                            warnings.push(
+                              "This package references MCP configuration or commands.",
+                            );
+                          if (
+                            /\b(curl|wget|invoke-webrequest|powershell|rm\s+-rf|format\s+c:)/i.test(
+                              text,
+                            )
+                          )
+                            warnings.push(
+                              "The documentation contains shell commands; review them before use.",
+                            );
                           setReadme({
                             name: i.name,
                             text,
@@ -906,9 +1098,17 @@ export function MarketplacePage() {
                     return;
                   api
                     .installSkill(readme.name, readme.text, destination)
-                    .then(() => setError("Skill installed. Reopen Skills to discover it."))
+                    .then(() =>
+                      setError(
+                        "Skill installed. Reopen Skills to discover it.",
+                      ),
+                    )
                     .catch((e) =>
-                      setError(e instanceof Error ? e.message : "Could not install this skill."),
+                      setError(
+                        e instanceof Error
+                          ? e.message
+                          : "Could not install this skill.",
+                      ),
                     );
                 }}
               >
@@ -924,19 +1124,39 @@ export function MarketplacePage() {
             any manual installation.
           </p>
           <div className="marketplace-metadata">
-            <span><strong>Description</strong> {readme.description}</span>
-            <span><strong>Version</strong> {readme.version}</span>
-            <span><strong>Author/source</strong> {readme.source}</span>
-            <span><strong>Compatibility</strong> Unknown until an adapter verifies it</span>
+            <span>
+              <strong>Description</strong> {readme.description}
+            </span>
+            <span>
+              <strong>Version</strong> {readme.version}
+            </span>
+            <span>
+              <strong>Author/source</strong> {readme.source}
+            </span>
+            <span>
+              <strong>Compatibility</strong> Unknown until an adapter verifies
+              it
+            </span>
           </div>
-          <p><strong>Files inspected ({readme.files.length})</strong></p>
+          <p>
+            <strong>Files inspected ({readme.files.length})</strong>
+          </p>
           <ul className="marketplace-files">
-            {readme.files.map((file) => <li key={file}><code>{file}</code></li>)}
+            {readme.files.map((file) => (
+              <li key={file}>
+                <code>{file}</code>
+              </li>
+            ))}
           </ul>
           {readme.warnings.map((warning) => (
-            <p className="warning" role="alert" key={warning}>{warning}</p>
+            <p className="warning" role="alert" key={warning}>
+              {warning}
+            </p>
           ))}
-          <p className="muted">Install preview: exactly one file will be copied — <code>{readme.name}/SKILL.md</code>. Bundled files remain untouched.</p>
+          <p className="muted">
+            Install preview: exactly one file will be copied —{" "}
+            <code>{readme.name}/SKILL.md</code>. Bundled files remain untouched.
+          </p>
           <pre>{readme.text}</pre>
         </div>
       )}
