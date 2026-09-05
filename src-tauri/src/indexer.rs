@@ -15,13 +15,20 @@ fn fingerprint(path: &Path) -> Result<String, String> {
 pub fn run(
     db: &mut Database,
     force: bool,
+    emit: impl FnMut(&IndexProgress),
+) -> Result<IndexProgress, String> {
+    let agents = adapters::agents(&db.settings()?);
+    run_with_agents(db, force, agents, emit)
+}
+
+pub fn run_with_agents(
+    db: &mut Database,
+    force: bool,
+    agents: Vec<crate::models::Agent>,
     mut emit: impl FnMut(&IndexProgress),
 ) -> Result<IndexProgress, String> {
     let mut progress = IndexProgress::default();
-    for agent in adapters::agents(&db.settings()?)
-        .into_iter()
-        .filter(|a| a.supported)
-    {
+    for agent in agents.into_iter().filter(|a| a.supported) {
         if !agent.sessions_detected {
             continue;
         }

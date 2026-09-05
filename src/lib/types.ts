@@ -50,6 +50,7 @@ export interface Overview {
   events: number;
   agents: Agent[];
   database_path: string;
+  demo_mode?: boolean;
 }
 export interface SearchHit {
   entity_type?: "session" | "project" | "memory" | "skill" | "mcp";

@@ -113,14 +113,18 @@ pub struct SkillFile {
 }
 #[tauri::command]
 pub async fn list_skills(state: State<'_, AppState>) -> Result<Vec<Skill>, String> {
-    with_db(&state, |db| {
+    let demo_home = state.demo_root.as_ref().map(|root| root.join("home"));
+    with_db(&state, move |db| {
         let projects = db
             .projects()
             .map_err(|e| e.to_string())?
             .into_iter()
             .map(|p| p.path)
             .collect::<Vec<_>>();
-        Ok(crate::skills::discover(&projects))
+        Ok(match demo_home {
+            Some(home) => crate::skills::discover_at(&home, &projects),
+            None => crate::skills::discover(&projects),
+        })
     })
     .await
 }

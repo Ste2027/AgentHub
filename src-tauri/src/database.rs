@@ -248,6 +248,24 @@ impl Database {
             events: counts.2,
             agents: crate::adapters::agents(&self.settings()?),
             database_path,
+            demo_mode: false,
+        })
+    }
+
+    pub fn overview_with_agents(
+        &self,
+        database_path: String,
+        agents: Vec<Agent>,
+        demo_mode: bool,
+    ) -> Result<Overview> {
+        let counts = self.conn.query_row("SELECT (SELECT count(*) FROM sessions),(SELECT count(*) FROM projects WHERE path<>''),(SELECT count(*) FROM events)",[],|r|Ok((r.get(0)?,r.get(1)?,r.get(2)?))).map_err(|e|e.to_string())?;
+        Ok(Overview {
+            sessions: counts.0,
+            projects: counts.1,
+            events: counts.2,
+            agents,
+            database_path,
+            demo_mode,
         })
     }
 }

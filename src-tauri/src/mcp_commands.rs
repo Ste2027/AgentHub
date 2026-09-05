@@ -56,14 +56,18 @@ fn server_object(
 }
 #[tauri::command]
 pub async fn list_mcp_servers(state: State<'_, AppState>) -> Result<Vec<McpServer>, String> {
-    with_db(&state, |db| {
+    let demo_home = state.demo_root.as_ref().map(|root| root.join("home"));
+    with_db(&state, move |db| {
         let projects = db
             .projects()
             .map_err(|e| e.to_string())?
             .into_iter()
             .map(|p| p.path)
             .collect::<Vec<_>>();
-        Ok(crate::mcp::discover(&projects))
+        Ok(match demo_home {
+            Some(home) => crate::mcp::discover_at(&home, &projects),
+            None => crate::mcp::discover(&projects),
+        })
     })
     .await
 }

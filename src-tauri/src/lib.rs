@@ -1,5 +1,6 @@
 pub mod adapters;
 pub mod database;
+pub mod demo;
 #[cfg(feature = "desktop")]
 pub mod desktop;
 pub mod exports;

@@ -8,6 +8,7 @@ use tauri::{Emitter, Manager, State};
 pub struct AppState {
     db: Arc<Mutex<Database>>,
     path: PathBuf,
+    pub(crate) demo_root: Option<PathBuf>,
 }
 pub(crate) async fn with_db<T: Send + 'static>(
     state: &AppState,
@@ -35,7 +36,12 @@ async fn session_context(
 #[tauri::command]
 async fn overview(state: State<'_, AppState>) -> Result<Overview, String> {
     let path = state.path.to_string_lossy().into_owned();
-    with_db(&state, move |db| db.overview(path)).await
+    let demo_root = state.demo_root.clone();
+    with_db(&state, move |db| match demo_root {
+        Some(root) => db.overview_with_agents(path, crate::demo::agents(&root), true),
+        None => db.overview(path),
+    })
+    .await
 }
 #[tauri::command]
 async fn get_settings(state: State<'_, AppState>) -> Result<Settings, String> {
@@ -95,10 +101,14 @@ async fn index_sessions(
     app: tauri::AppHandle,
     force: bool,
 ) -> Result<IndexProgress, String> {
-    with_db(&state, move |db| {
-        indexer::run(db, force, |p| {
+    let demo_root = state.demo_root.clone();
+    with_db(&state, move |db| match demo_root {
+        Some(root) => indexer::run_with_agents(db, force, crate::demo::agents(&root), |p| {
             let _ = app.emit("index-progress", p);
-        })
+        }),
+        None => indexer::run(db, force, |p| {
+            let _ = app.emit("index-progress", p);
+        }),
     })
     .await
 }
@@ -106,24 +116,34 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            let demo = matches!(
+                std::env::var("AGENTHUB_DEMO").ok().as_deref(),
+                Some("1" | "true" | "yes")
+            );
             let dir = match std::env::var_os("AGENTHUB_DATA_DIR") {
                 Some(value) => {
                     let path = PathBuf::from(value);
-                    if !path.is_absolute() {
-                        return Err(
-                            std::io::Error::other("AGENTHUB_DATA_DIR must be absolute").into()
-                        );
+                    if !crate::paths::is_local_absolute(&path) {
+                        return Err(std::io::Error::other(
+                            "AGENTHUB_DATA_DIR must be an absolute local path",
+                        )
+                        .into());
                     }
                     path
                 }
+                None if demo => std::env::temp_dir().join("agenthub-demo-v0.1.1"),
                 None => app.path().app_local_data_dir()?,
             };
             std::fs::create_dir_all(&dir)?;
             let path = dir.join("agenthub.db");
-            let db = Database::open(&path).map_err(std::io::Error::other)?;
+            let mut db = Database::open(&path).map_err(std::io::Error::other)?;
+            if demo {
+                crate::demo::prepare(&dir, &mut db).map_err(std::io::Error::other)?;
+            }
             app.manage(AppState {
                 db: Arc::new(Mutex::new(db)),
                 path,
+                demo_root: demo.then_some(dir),
             });
             Ok(())
         })

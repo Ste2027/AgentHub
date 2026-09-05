@@ -126,6 +126,10 @@ fn add_toml(path: &Path, out: &mut Vec<McpServer>) {
 }
 pub fn discover(projects: &[String]) -> Vec<McpServer> {
     let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
+    discover_at(&home, projects)
+}
+
+pub fn discover_at(home: &Path, projects: &[String]) -> Vec<McpServer> {
     let mut out = Vec::new();
     add_json(&home.join(".claude.json"), "claude", "user", &mut out);
     add_toml(&home.join(".codex/config.toml"), &mut out);

@@ -86,4 +86,5 @@ pub struct Overview {
     pub events: usize,
     pub agents: Vec<Agent>,
     pub database_path: String,
+    pub demo_mode: bool,
 }

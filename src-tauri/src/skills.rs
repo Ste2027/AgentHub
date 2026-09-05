@@ -75,8 +75,12 @@ fn scan(root: &Path, agent: &str, scope: &str, out: &mut Vec<Skill>) {
     }
 }
 pub fn discover(projects: &[String]) -> Vec<Skill> {
-    let mut out = Vec::new();
     let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
+    discover_at(&home, projects)
+}
+
+pub fn discover_at(home: &Path, projects: &[String]) -> Vec<Skill> {
+    let mut out = Vec::new();
     scan(&home.join(".agents/skills"), "codex", "user", &mut out);
     scan(&home.join(".claude/skills"), "claude", "user", &mut out);
     for project in projects {

@@ -374,6 +374,16 @@ export function App() {
               </span>
             </div>
           )}
+          {overview?.demo_mode && (
+            <div className="notice demo-notice" role="status">
+              <Database size={18} />
+              <span>
+                <strong>Isolated demo workspace</strong> · Every session,
+                project, memory, skill and MCP entry shown here is synthetic.
+                AgentHub will not scan your normal agent folders in this mode.
+              </span>
+            </div>
+          )}
           {error && (
             <div className="error" role="alert">
               {error}
