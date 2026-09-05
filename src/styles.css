@@ -1626,6 +1626,64 @@ select {
   padding-left: 18px;
   color: var(--muted);
 }
+.marketplace-preview {
+  display: grid;
+  gap: 17px;
+  margin-top: 24px;
+}
+.marketplace-preview > header > div:first-child {
+  min-width: 0;
+}
+.marketplace-preview > header small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.marketplace-preview .notice {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+}
+.marketplace-tree {
+  max-height: 260px;
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--input);
+}
+.marketplace-tree code {
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+}
+.marketplace-install-grid {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.55fr) minmax(240px, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--panel) 72%, var(--bg));
+}
+.marketplace-install-grid label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.marketplace-install-grid input,
+.marketplace-install-grid select {
+  width: 100%;
+}
+.resource-row .badge svg {
+  display: inline;
+  margin-right: 4px;
+  vertical-align: -2px;
+}
 .warning {
   color: #eab308;
   border-left: 2px solid #eab308;
@@ -1677,6 +1735,10 @@ select {
   .resource-row {
     align-items: flex-start;
     flex-wrap: wrap;
+  }
+  .marketplace-install-grid {
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
 }
 .metric-card,

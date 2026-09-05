@@ -40,11 +40,8 @@ import { Search } from "./features/Search";
 import { Settings } from "./features/Settings";
 import { MemoryLibrary } from "./features/memories/MemoryLibrary";
 import { Analytics } from "./features/Analytics";
-import {
-  SkillsPage,
-  McpPage,
-  MarketplacePage,
-} from "./features/AgentResources";
+import { SkillsPage, McpPage } from "./features/AgentResources";
+import { MarketplacePage } from "./features/MarketplacePage";
 import { Onboarding } from "./features/Onboarding";
 
 const pages = [
