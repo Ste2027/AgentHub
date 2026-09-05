@@ -31,3 +31,4 @@ jobs:
           releaseBody: See the changelog and README for verified capabilities and platform limits.
           releaseDraft: true
           prerelease: true
+          args: ${{ matrix.args }} --features desktop
