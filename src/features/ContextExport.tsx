@@ -4,7 +4,7 @@ import { api } from "@/lib/api";
 import { saveText } from "@/lib/files";
 import { formatContext } from "@/lib/context";
 import { errorMessage } from "@/lib/utils";
-import type { SessionContext } from "@/lib/types";
+import type { Memory, SessionContext } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 export function ContextExport({
   sessionId,
@@ -18,13 +18,22 @@ export function ContextExport({
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
+  const [memories, setMemories] = useState<Memory[]>([]);
+  const [selectedMemoryIds, setSelectedMemoryIds] = useState<string[]>([]);
   useEffect(() => {
     let active = true;
-    api
-      .context(sessionId)
-      .then((c) => {
+    Promise.all([api.context(sessionId), api.memories("", "", false, 0)])
+      .then(([c, page]) => {
         if (active) {
           setContext(c);
+          setMemories(
+            page.items.filter(
+              (m) =>
+                m.scope === "global" ||
+                (m.scope === "project" && m.project === c.project) ||
+                (m.scope === "agent" && m.agents.includes(c.source_agent)),
+            ),
+          );
           setTarget(
             c.source_agent === "codex" ? "Claude Code" : "OpenAI Codex",
           );
@@ -42,7 +51,16 @@ export function ContextExport({
     setSaving(true);
     setError("");
     try {
-      if (await saveText(formatContext(context, target), "agenthub-context.md"))
+      if (
+        await saveText(
+          formatContext(
+            context,
+            target,
+            memories.filter((m) => selectedMemoryIds.includes(m.id)),
+          ),
+          "agenthub-context.md",
+        )
+      )
         setNotice(
           "Context exported. Open the Markdown file in your next agent session.",
         );
@@ -131,9 +149,40 @@ export function ContextExport({
               full indexed history.
             </p>
           )}
+          {memories.length > 0 && (
+            <fieldset className="context-memories">
+              <legend>Include memories (optional)</legend>
+              <p className="field-note">
+                Only matching global, project or source-agent memories are
+                offered. Review them before exporting.
+              </p>
+              {memories.map((m) => (
+                <label key={m.id}>
+                  <input
+                    type="checkbox"
+                    checked={selectedMemoryIds.includes(m.id)}
+                    onChange={(e) =>
+                      setSelectedMemoryIds((ids) =>
+                        e.target.checked
+                          ? [...ids, m.id]
+                          : ids.filter((id) => id !== m.id),
+                      )
+                    }
+                  />{" "}
+                  {m.title} <span className="badge">{m.scope}</span>
+                </label>
+              ))}
+            </fieldset>
+          )}
           <details>
             <summary>Preview exported Markdown</summary>
-            <pre>{formatContext(context, target)}</pre>
+            <pre>
+              {formatContext(
+                context,
+                target,
+                memories.filter((m) => selectedMemoryIds.includes(m.id)),
+              )}
+            </pre>
           </details>
           {notice && (
             <p className="success" role="status">

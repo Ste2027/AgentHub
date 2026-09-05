@@ -23,6 +23,7 @@ function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
 export const api = {
   analytics: () => call<Analytics>("get_analytics"),
   skills: () => call<Skill[]>("list_skills"),
+  skillContent: (path: string) => call<string>("read_skill", { path }),
   mcpServers: () => call<McpServer[]>("list_mcp_servers"),
   context: (sessionId: string) =>
     call<SessionContext>("session_context", { sessionId }),

@@ -280,6 +280,10 @@ export function AgentsPage({
   const [skills, setSkills] = useState<Skill[]>([]);
   const [mcp, setMcp] = useState<McpServer[]>([]);
   const [loadError, setLoadError] = useState("");
+  const [skillContent, setSkillContent] = useState<{
+    name: string;
+    text: string;
+  } | null>(null);
   useEffect(() => {
     if (!desktop) return;
     Promise.all([api.skills(), api.mcpServers()])
@@ -374,10 +378,38 @@ export function AgentsPage({
               <span className="badge">
                 {s.readable ? "Readable" : "Unavailable"}
               </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!s.readable}
+                onClick={() =>
+                  api
+                    .skillContent(s.path)
+                    .then((text) => setSkillContent({ name: s.name, text }))
+                    .catch(() => setLoadError("Could not read this SKILL.md."))
+                }
+              >
+                Review
+              </Button>
             </div>
           ))
         ) : (
           <p className="muted">No supported skills found yet.</p>
+        )}
+        {skillContent && (
+          <div className="skill-preview">
+            <div>
+              <h3>{skillContent.name}</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSkillContent(null)}
+              >
+                Close
+              </Button>
+            </div>
+            <pre>{skillContent.text}</pre>
+          </div>
         )}
       </section>
       <section className="panel agent-panel">

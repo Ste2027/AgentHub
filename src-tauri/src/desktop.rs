@@ -129,6 +129,7 @@ pub fn run() {
             crate::memory_commands::import_memories,
             crate::memory_commands::write_export,
             crate::skill_commands::list_skills,
+            crate::skill_commands::read_skill,
             crate::mcp_commands::list_mcp_servers,
             overview,
             get_settings,

@@ -1,5 +1,9 @@
-import type { SessionContext } from "./types";
-export function formatContext(context: SessionContext, target: string): string {
+import type { Memory, SessionContext } from "./types";
+export function formatContext(
+  context: SessionContext,
+  target: string,
+  memories: Memory[] = [],
+): string {
   const block = (title: string, text: string) =>
     `## ${title}\n\n${text.trim() || "Not recorded / not provided."}\n`;
   const list = (items: string[]) =>
@@ -25,6 +29,13 @@ export function formatContext(context: SessionContext, target: string): string {
     block("Remaining work", context.remaining_work) +
     "\n" +
     block("Recent assistant notes — source excerpts", list(context.notes)) +
+    (memories.length
+      ? "\n" +
+        block(
+          "Selected AgentHub memories — review before using",
+          memories.map((m) => `### ${m.title}\n${m.body}`).join("\n\n"),
+        )
+      : "") +
     `\n${context.truncated ? "Some source content was omitted to keep this package compact. Inspect the original session for complete details.\n" : ""}`
   );
 }

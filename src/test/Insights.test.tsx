@@ -4,6 +4,7 @@ import { ContextExport } from "@/features/ContextExport";
 import { Analytics } from "@/features/Analytics";
 const mocks = vi.hoisted(() => ({
   context: vi.fn(),
+  memories: vi.fn(),
   analytics: vi.fn(),
   saveText: vi.fn(),
 }));
@@ -25,6 +26,7 @@ beforeEach(() => {
     notes: [],
     truncated: false,
   });
+  mocks.memories.mockResolvedValue({ items: [], total: 0 });
   mocks.saveText.mockResolvedValue(true);
 });
 it("exports edited context with the chosen target and source caveats", async () => {
