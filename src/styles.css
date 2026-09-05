@@ -1276,6 +1276,12 @@ select {
   color: var(--muted);
   overflow-wrap: anywhere;
 }
+.compatibility-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
 .resource-row code {
   display: block;
   margin: 4px 0 7px;
@@ -1309,6 +1315,18 @@ select {
   display: grid;
   gap: 8px;
   margin: 24px 0;
+}
+.marketplace-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 20px 0;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+.marketplace-filter {
+  width: 100%;
+  margin: 0 0 16px;
 }
 .marketplace-source > div {
   display: flex;

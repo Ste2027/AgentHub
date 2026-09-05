@@ -296,6 +296,15 @@ export function McpPage() {
                   {s.args.length ? ` · ${s.args.length} args` : ""}
                   {s.env_keys.length ? ` · ${s.env_keys.length} env keys` : ""}
                 </small>
+                <div className="compatibility-chips">
+                  {["claude", "codex", "cursor", "gemini", "opencode"].map(
+                    (a) => (
+                      <span className="badge" key={a}>
+                        {a}: {a === s.agent ? "Supported" : "Unknown"}
+                      </span>
+                    ),
+                  )}
+                </div>
               </div>
               <Button
                 variant="outline"
@@ -402,6 +411,19 @@ export function McpPage() {
 
 export function MarketplacePage() {
   const [source, setSource] = useState("");
+  const [sources, setSources] = useState<string[]>(() => {
+    try {
+      return JSON.parse(
+        localStorage.getItem("agenthub.marketplace.sources") || "[]",
+      ) as string[];
+    } catch {
+      return [];
+    }
+  });
+  const [view, setView] = useState<
+    "browse" | "installed" | "updates" | "sources"
+  >("browse");
+  const [catalogQuery, setCatalogQuery] = useState("");
   const [items, setItems] = useState<{ name: string; url: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -436,6 +458,14 @@ export function MarketplacePage() {
           .filter((x) => x.type === "dir")
           .map((x) => ({ name: x.name, url: x.html_url })),
       );
+      if (!sources.includes(source.trim())) {
+        const next = [...sources, source.trim()];
+        setSources(next);
+        localStorage.setItem(
+          "agenthub.marketplace.sources",
+          JSON.stringify(next),
+        );
+      }
     } catch (e) {
       setError(
         e instanceof Error
@@ -455,68 +485,154 @@ export function MarketplacePage() {
         does not use credentials, track popularity or install code
         automatically.
       </p>
-      <div className="marketplace-source">
-        <label htmlFor="marketplace-source">GitHub repository URL</label>
-        <div>
-          <input
-            id="marketplace-source"
-            placeholder="https://github.com/org/skills"
-            value={source}
-            onChange={(e) => setSource(e.target.value)}
-          />
-          <Button disabled={loading} onClick={() => void browse()}>
-            {loading ? "Browsing…" : "Browse"}
-          </Button>
-        </div>
+      <div className="marketplace-tabs">
+        <Button
+          variant={view === "browse" ? "outline" : "ghost"}
+          onClick={() => setView("browse")}
+        >
+          Browse
+        </Button>
+        <Button
+          variant={view === "installed" ? "outline" : "ghost"}
+          onClick={() => setView("installed")}
+        >
+          Installed
+        </Button>
+        <Button
+          variant={view === "updates" ? "outline" : "ghost"}
+          onClick={() => setView("updates")}
+        >
+          Updates
+        </Button>
+        <Button
+          variant={view === "sources" ? "outline" : "ghost"}
+          onClick={() => setView("sources")}
+        >
+          Sources
+        </Button>
       </div>
-      {error && (
-        <p className="error" role="alert">
-          {error}
-        </p>
-      )}
-      {items.length > 0 && (
-        <div className="resource-list">
-          {items.map((i) => (
-            <article className="resource-row" key={i.name}>
-              <div>
-                <h3>{i.name}</h3>
-                <small>{i.url}</small>
+      {view === "sources" ? (
+        <div className="marketplace-sources">
+          {sources.length ? (
+            sources.map((s) => (
+              <div className="resource-row" key={s}>
+                <code>{s}</code>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const next = sources.filter((x) => x !== s);
+                    setSources(next);
+                    localStorage.setItem(
+                      "agenthub.marketplace.sources",
+                      JSON.stringify(next),
+                    );
+                  }}
+                >
+                  Remove
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  try {
-                    const raw = i.url.replace(
-                      "github.com",
-                      "api.github.com/repos",
-                    );
-                    const r = await fetch(raw + "/contents");
-                    const entries = (await r.json()) as {
-                      name: string;
-                      download_url: string | null;
-                    }[];
-                    const skill = entries.find(
-                      (e) => e.name.toLowerCase() === "skill.md",
-                    );
-                    if (!skill?.download_url)
-                      throw Error("This folder has no SKILL.md at its root.");
-                    const t = await fetch(skill.download_url);
-                    setReadme({ name: i.name, text: await t.text() });
-                  } catch (e) {
-                    setError(
-                      e instanceof Error
-                        ? e.message
-                        : "Could not inspect this skill.",
-                    );
-                  }
-                }}
-              >
-                Inspect
-              </Button>
-            </article>
-          ))}
+            ))
+          ) : (
+            <p className="muted">No saved sources yet.</p>
+          )}
         </div>
+      ) : (
+        <>
+          <div className="marketplace-source">
+            <label htmlFor="marketplace-source">GitHub repository URL</label>
+            <div>
+              <input
+                id="marketplace-source"
+                placeholder="https://github.com/org/skills"
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+              />
+              <Button disabled={loading} onClick={() => void browse()}>
+                {loading ? "Browsing…" : "Browse"}
+              </Button>
+            </div>
+          </div>
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
+          {view === "updates" && (
+            <p className="muted">
+              Update checks are not available until a source package is
+              installed locally.
+            </p>
+          )}
+          {view === "browse" && (
+            <input
+              className="marketplace-filter"
+              aria-label="Search marketplace catalog"
+              placeholder="Search catalog…"
+              value={catalogQuery}
+              onChange={(e) => setCatalogQuery(e.target.value)}
+            />
+          )}
+          {view === "installed" && (
+            <p className="muted">
+              Installed skills are shown in the Skills tab. Marketplace
+              installation remains a deliberate copy operation with an explicit
+              destination.
+            </p>
+          )}
+          {view === "browse" && items.length > 0 && (
+            <div className="resource-list">
+              {items
+                .filter((i) =>
+                  i.name
+                    .toLocaleLowerCase()
+                    .includes(catalogQuery.toLocaleLowerCase()),
+                )
+                .map((i) => (
+                  <article className="resource-row" key={i.name}>
+                    <div>
+                      <h3>{i.name}</h3>
+                      <small>{i.url}</small>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const raw = i.url.replace(
+                            "github.com",
+                            "api.github.com/repos",
+                          );
+                          const r = await fetch(raw + "/contents");
+                          const entries = (await r.json()) as {
+                            name: string;
+                            download_url: string | null;
+                          }[];
+                          const skill = entries.find(
+                            (e) => e.name.toLowerCase() === "skill.md",
+                          );
+                          if (!skill?.download_url)
+                            throw Error(
+                              "This folder has no SKILL.md at its root.",
+                            );
+                          const t = await fetch(skill.download_url);
+                          setReadme({ name: i.name, text: await t.text() });
+                        } catch (e) {
+                          setError(
+                            e instanceof Error
+                              ? e.message
+                              : "Could not inspect this skill.",
+                          );
+                        }
+                      }}
+                    >
+                      Inspect
+                    </Button>
+                  </article>
+                ))}
+            </div>
+          )}
+        </>
       )}
       {readme && (
         <div className="resource-preview">
