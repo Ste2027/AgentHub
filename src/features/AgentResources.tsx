@@ -6,7 +6,13 @@ import { Empty } from "@/components/Empty";
 
 export function SkillsPage() {
   const [items, setItems] = useState<Skill[]>([]);
-  const [open, setOpen] = useState<{ name: string; text: string } | null>(null);
+  const [open, setOpen] = useState<{
+    name: string;
+    path: string;
+    text: string;
+    hash: string;
+    editing: boolean;
+  } | null>(null);
   const [error, setError] = useState("");
   useEffect(() => {
     if (desktop)
@@ -53,6 +59,10 @@ export function SkillsPage() {
                 <p>{s.description || "No description in frontmatter."}</p>
                 <small>
                   {s.agent} · {s.scope} · {s.path}
+                  {s.modified_at ? ` · updated ${s.modified_at}` : ""}
+                  {s.files.length
+                    ? ` · ${s.files.length} associated files`
+                    : ""}
                 </small>
               </div>
               <Button
@@ -62,7 +72,15 @@ export function SkillsPage() {
                 onClick={() =>
                   api
                     .skillContent(s.path)
-                    .then((text) => setOpen({ name: s.name, text }))
+                    .then((file) =>
+                      setOpen({
+                        name: s.name,
+                        path: s.path,
+                        text: file.text,
+                        hash: file.hash,
+                        editing: false,
+                      }),
+                    )
                     .catch(() => setError("Could not read this skill."))
                 }
               >
@@ -81,11 +99,63 @@ export function SkillsPage() {
         <div className="resource-preview">
           <header>
             <h3>{open.name}</h3>
-            <Button variant="ghost" size="sm" onClick={() => setOpen(null)}>
-              Close
-            </Button>
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setOpen({ ...open, editing: !open.editing })}
+              >
+                {open.editing ? "Cancel edit" : "Edit"}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setOpen(null)}>
+                Close
+              </Button>
+            </div>
           </header>
-          <pre>{open.text}</pre>
+          {open.editing ? (
+            <>
+              <textarea
+                className="skill-editor"
+                aria-label="Skill content"
+                value={open.text}
+                onChange={(e) => setOpen({ ...open, text: e.target.value })}
+              />
+              <details open>
+                <summary>Preview changes</summary>
+                <pre>{open.text}</pre>
+              </details>
+              <Button
+                onClick={() => {
+                  if (
+                    !window.confirm("Create a backup and save this SKILL.md?")
+                  )
+                    return;
+                  api
+                    .saveSkill(open.path, open.text, open.hash)
+                    .then(() => api.skillContent(open.path))
+                    .then((file) =>
+                      setOpen({
+                        ...open,
+                        text: file.text,
+                        hash: file.hash,
+                        editing: false,
+                      }),
+                    )
+                    .catch((e) =>
+                      setError(
+                        e instanceof Error
+                          ? e.message
+                          : "Could not save this skill.",
+                      ),
+                    );
+                }}
+              >
+                Save skill
+              </Button>
+            </>
+          ) : (
+            <pre>{open.text}</pre>
+          )}
         </div>
       )}
     </section>
@@ -159,41 +229,160 @@ export function McpPage() {
 }
 
 export function MarketplacePage() {
+  const [source, setSource] = useState("");
+  const [items, setItems] = useState<{ name: string; url: string }[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [readme, setReadme] = useState<{ name: string; text: string } | null>(
+    null,
+  );
+  async function browse() {
+    const match = source
+      .trim()
+      .match(/^https?:\/\/github\.com\/([^/]+)\/([^/#]+)\/?$/);
+    if (!match) {
+      setError(
+        "Enter a public GitHub repository URL, for example https://github.com/org/skills.",
+      );
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const r = await fetch(
+        `https://api.github.com/repos/${match[1]}/${match[2]}/contents`,
+        { headers: { Accept: "application/vnd.github+json" } },
+      );
+      if (!r.ok) throw Error(`GitHub returned ${r.status}.`);
+      const data = (await r.json()) as {
+        type: string;
+        name: string;
+        html_url: string;
+      }[];
+      setItems(
+        data
+          .filter((x) => x.type === "dir")
+          .map((x) => ({ name: x.name, url: x.html_url })),
+      );
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Could not read this public repository.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
   return (
     <section className="panel marketplace-panel">
-      <span className="badge accent">LOCAL MARKETPLACE</span>
+      <span className="badge accent">PUBLIC REPOSITORY CATALOG</span>
       <h2>Skills marketplace</h2>
       <p>
-        AgentHub does not contact a marketplace or download code automatically.
-        This page is reserved for reviewed skill packages you import
-        deliberately from disk or a trusted repository.
+        Browse a public GitHub repository only when you request it. AgentHub
+        does not use credentials, track popularity or install code
+        automatically.
       </p>
+      <div className="marketplace-source">
+        <label htmlFor="marketplace-source">GitHub repository URL</label>
+        <div>
+          <input
+            id="marketplace-source"
+            placeholder="https://github.com/org/skills"
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+          />
+          <Button disabled={loading} onClick={() => void browse()}>
+            {loading ? "Browsing…" : "Browse"}
+          </Button>
+        </div>
+      </div>
+      {error && (
+        <p className="error" role="alert">
+          {error}
+        </p>
+      )}
+      {items.length > 0 && (
+        <div className="resource-list">
+          {items.map((i) => (
+            <article className="resource-row" key={i.name}>
+              <div>
+                <h3>{i.name}</h3>
+                <small>{i.url}</small>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const raw = i.url.replace(
+                      "github.com",
+                      "api.github.com/repos",
+                    );
+                    const r = await fetch(raw + "/contents");
+                    const entries = (await r.json()) as {
+                      name: string;
+                      download_url: string | null;
+                    }[];
+                    const skill = entries.find(
+                      (e) => e.name.toLowerCase() === "skill.md",
+                    );
+                    if (!skill?.download_url)
+                      throw Error("This folder has no SKILL.md at its root.");
+                    const t = await fetch(skill.download_url);
+                    setReadme({ name: i.name, text: await t.text() });
+                  } catch (e) {
+                    setError(
+                      e instanceof Error
+                        ? e.message
+                        : "Could not inspect this skill.",
+                    );
+                  }
+                }}
+              >
+                Inspect
+              </Button>
+            </article>
+          ))}
+        </div>
+      )}
+      {readme && (
+        <div className="resource-preview">
+          <header>
+            <h3>{readme.name}</h3>
+            <Button variant="ghost" size="sm" onClick={() => setReadme(null)}>
+              Close
+            </Button>
+          </header>
+          <p className="notice">
+            Remote content is untrusted. Review instructions and scripts before
+            any manual installation.
+          </p>
+          <pre>{readme.text}</pre>
+        </div>
+      )}
       <div className="marketplace-rules">
         <div>
           <strong>Review first</strong>
           <span>
-            Inspect SKILL.md and every bundled script before using a package.
-          </span>
-        </div>
-        <div>
-          <strong>Portable folders</strong>
-          <span>
-            Packages use the same .agents/skills and .claude/skills layouts as
-            the agents themselves.
+            Inspect SKILL.md and bundled scripts before using a package.
           </span>
         </div>
         <div>
           <strong>No hidden sync</strong>
           <span>
-            Installing a package will require an explicit destination and a
-            visible change preview.
+            Installing a package requires an explicit destination and visible
+            change preview.
+          </span>
+        </div>
+        <div>
+          <strong>Data stays deliberate</strong>
+          <span>
+            Only public repository content is fetched after you click Browse or
+            Inspect.
           </span>
         </div>
       </div>
-      <p className="muted">
-        Catalog and installation flow are being built next. No empty cards or
-        pretend listings are shown.
-      </p>
     </section>
   );
 }

@@ -1297,6 +1297,23 @@ select {
   gap: 12px;
   margin: 24px 0;
 }
+.marketplace-source {
+  display: grid;
+  gap: 8px;
+  margin: 24px 0;
+}
+.marketplace-source > div {
+  display: flex;
+  gap: 10px;
+}
+.marketplace-source input {
+  flex: 1;
+}
+.skill-editor {
+  width: 100%;
+  min-height: 420px;
+  font-family: ui-monospace, monospace;
+}
 .marketplace-rules div {
   border: 1px solid var(--border);
   border-radius: 12px;

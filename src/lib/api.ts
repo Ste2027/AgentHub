@@ -1,5 +1,11 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
-import type { Analytics, SessionContext, Skill, McpServer } from "./types";
+import type {
+  Analytics,
+  SessionContext,
+  Skill,
+  McpServer,
+  SkillFile,
+} from "./types";
 import type { Memory, MemoryDraft, MemoryPage, ImportResult } from "./types";
 import type {
   IndexProgress,
@@ -23,7 +29,9 @@ function call<T>(command: string, args?: Record<string, unknown>): Promise<T> {
 export const api = {
   analytics: () => call<Analytics>("get_analytics"),
   skills: () => call<Skill[]>("list_skills"),
-  skillContent: (path: string) => call<string>("read_skill", { path }),
+  skillContent: (path: string) => call<SkillFile>("read_skill", { path }),
+  saveSkill: (path: string, text: string, expected: string) =>
+    call<string>("save_skill", { path, text, expected }),
   mcpServers: () => call<McpServer[]>("list_mcp_servers"),
   context: (sessionId: string) =>
     call<SessionContext>("session_context", { sessionId }),

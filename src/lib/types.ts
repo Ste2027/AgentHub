@@ -145,6 +145,12 @@ export interface Skill {
   description: string;
   scope: string;
   readable: boolean;
+  modified_at: string;
+  files: string[];
+}
+export interface SkillFile {
+  text: string;
+  hash: string;
 }
 export interface McpServer {
   name: string;

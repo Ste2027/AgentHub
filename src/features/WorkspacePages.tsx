@@ -373,6 +373,7 @@ export function AgentsPage({
                 </p>
                 <small>
                   {s.agent} · {s.scope}
+                  {s.files.length ? ` · ${s.files.length} files` : ""}
                 </small>
               </div>
               <span className="badge">
@@ -385,7 +386,7 @@ export function AgentsPage({
                 onClick={() =>
                   api
                     .skillContent(s.path)
-                    .then((text) => setSkillContent({ name: s.name, text }))
+                    .then((file) => setSkillContent({ name: s.name, text: file.text }))
                     .catch(() => setLoadError("Could not read this SKILL.md."))
                 }
               >

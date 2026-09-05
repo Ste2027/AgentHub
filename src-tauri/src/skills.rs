@@ -12,6 +12,8 @@ pub struct Skill {
     pub description: String,
     pub scope: String,
     pub readable: bool,
+    pub modified_at: String,
+    pub files: Vec<String>,
 }
 
 fn frontmatter(text: &str) -> String {
@@ -40,6 +42,21 @@ fn scan(root: &Path, agent: &str, scope: &str, out: &mut Vec<Skill>) {
         let file = p.join("SKILL.md");
         if file.is_file() {
             let text = fs::read_to_string(&file);
+            let files = fs::read_dir(&p)
+                .map(|entries| {
+                    entries
+                        .flatten()
+                        .filter_map(|e| e.file_name().to_str().map(str::to_owned))
+                        .filter(|n| n != "SKILL.md")
+                        .take(100)
+                        .collect()
+                })
+                .unwrap_or_default();
+            let modified_at = fs::metadata(&file)
+                .and_then(|m| m.modified())
+                .ok()
+                .map(|t| format!("{:?}", t))
+                .unwrap_or_default();
             out.push(Skill {
                 name: p
                     .file_name()
@@ -51,6 +68,8 @@ fn scan(root: &Path, agent: &str, scope: &str, out: &mut Vec<Skill>) {
                 description: text.as_deref().map(frontmatter).unwrap_or_default(),
                 scope: scope.to_owned(),
                 readable: text.is_ok(),
+                modified_at,
+                files,
             });
         }
     }
