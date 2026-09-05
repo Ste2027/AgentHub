@@ -37,6 +37,11 @@ import { Search } from "./features/Search";
 import { Settings } from "./features/Settings";
 import { MemoryLibrary } from "./features/memories/MemoryLibrary";
 import { Analytics } from "./features/Analytics";
+import {
+  SkillsPage,
+  McpPage,
+  MarketplacePage,
+} from "./features/AgentResources";
 
 const pages = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -44,11 +49,23 @@ const pages = [
   { id: "projects", label: "Projects", icon: FolderGit2 },
   { id: "memories", label: "Memories", icon: Brain },
   { id: "analytics", label: "Activity", icon: BarChart3 },
+  { id: "skills", label: "Skills", icon: Brain },
+  { id: "mcp", label: "MCP", icon: Cpu },
+  { id: "marketplace", label: "Marketplace", icon: Layers3 },
   { id: "agents", label: "Agents", icon: Cpu },
   { id: "settings", label: "Settings", icon: SlidersHorizontal },
 ] as const;
 const headings: Record<Page, [string, string]> = {
   analytics: ["Local activity", "Understand the work recorded by your agents."],
+  skills: ["Skills", "Review the workflows your agents can discover locally."],
+  mcp: [
+    "MCP servers",
+    "Inspect local tool configuration without starting anything.",
+  ],
+  marketplace: [
+    "Marketplace",
+    "A deliberate, local-first home for reviewed skill packages.",
+  ],
   memories: [
     "Memories",
     "Keep the decisions and context worth carrying forward.",
@@ -421,6 +438,9 @@ export function App() {
                 />
               )}
               {page === "analytics" && <Analytics revision={revision} />}
+              {page === "skills" && <SkillsPage />}
+              {page === "mcp" && <McpPage />}
+              {page === "marketplace" && <MarketplacePage />}
             </>
           )}
         </div>

@@ -73,7 +73,11 @@ export type Page =
   | "agents"
   | "settings"
   | "memories"
-  | "analytics";
+  | "analytics"
+  | "skills"
+  | "mcp"
+  | "marketplace";
+
 export interface MemoryDraft {
   id: string | null;
   revision: number | null;
