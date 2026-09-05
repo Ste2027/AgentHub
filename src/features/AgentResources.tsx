@@ -296,6 +296,13 @@ export function McpPage() {
         .then(setItems)
         .catch(() => setError("Could not read local MCP configuration."));
   }, []);
+  async function reloadMcp() {
+    try {
+      setItems(await api.mcpServers());
+    } catch {
+      setError("Could not refresh local MCP configuration.");
+    }
+  }
   if (!desktop)
     return (
       <div className="panel">
@@ -371,6 +378,73 @@ export function McpPage() {
                 }
               >
                 Review
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={async () => {
+                  const newName = window.prompt(`Duplicate ${s.name} as:`);
+                  if (!newName || !window.confirm(`Duplicate ${s.name} as ${newName}?`)) return;
+                  try {
+                    const file = await api.mcpConfig(s.config_path);
+                    await api.duplicateMcpServer(s.config_path, s.name, newName, file.hash);
+                    await reloadMcp();
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : "Could not duplicate this server.");
+                  }
+                }}
+              >
+                Duplicate
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={async () => {
+                  const destination = window.prompt(
+                    "Absolute destination JSON config path for this server:",
+                  );
+                  if (!destination || !window.confirm(`Copy ${s.name} to ${destination}?`)) return;
+                  try {
+                    await api.copyMcpServer(s.config_path, s.name, destination);
+                    setError("MCP server copied. Reopen the target agent to load its config.");
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : "Could not copy this server.");
+                  }
+                }}
+              >
+                Copy to agent
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={async () => {
+                  if (!window.confirm(`${s.enabled ? "Disable" : "Enable"} ${s.name}?`)) return;
+                  try {
+                    const file = await api.mcpConfig(s.config_path);
+                    await api.setMcpEnabled(s.config_path, s.name, !s.enabled, file.hash);
+                    await reloadMcp();
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : "Could not change this server.");
+                  }
+                }}
+              >
+                {s.enabled ? "Disable" : "Enable"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={async () => {
+                  if (!window.confirm(`Remove ${s.name} from this MCP config?`)) return;
+                  try {
+                    const file = await api.mcpConfig(s.config_path);
+                    await api.removeMcpServer(s.config_path, s.name, file.hash);
+                    await reloadMcp();
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : "Could not remove this server.");
+                  }
+                }}
+              >
+                Remove
               </Button>
             </article>
           ))}

@@ -4,6 +4,57 @@ use crate::{
 };
 use sha2::Digest;
 use tauri::State;
+
+fn stamp() -> Result<u128, String> {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .map_err(|e| e.to_string())
+}
+
+fn write_json_config(p: &std::path::Path, root: &serde_json::Value) -> Result<String, String> {
+    let text = serde_json::to_string_pretty(root).map_err(|e| e.to_string())? + "\n";
+    let suffix = stamp()?;
+    let backup = p.with_file_name(format!(
+        "{}.agenthub-backup-{suffix}",
+        p.file_name().unwrap_or_default().to_string_lossy()
+    ));
+    std::fs::copy(p, &backup).map_err(|e| e.to_string())?;
+    let tmp = p.with_file_name(format!(
+        "{}.agenthub-tmp-{suffix}",
+        p.file_name().unwrap_or_default().to_string_lossy()
+    ));
+    if let Err(e) = std::fs::write(&tmp, text.as_bytes()) {
+        let _ = std::fs::remove_file(&tmp);
+        return Err(e.to_string());
+    }
+    if let Err(e) = std::fs::rename(&tmp, p) {
+        let _ = std::fs::remove_file(&tmp);
+        return Err(e.to_string());
+    }
+    Ok(backup.to_string_lossy().into_owned())
+}
+
+fn load_json(path: &str) -> Result<(std::path::PathBuf, serde_json::Value), String> {
+    let p = std::path::PathBuf::from(path);
+    if !p.is_absolute() || !matches!(p.extension().and_then(|x| x.to_str()), Some("json")) {
+        return Err("Only absolute JSON MCP configs can be changed safely".into());
+    }
+    let text = std::fs::read_to_string(&p).map_err(|e| e.to_string())?;
+    let root = serde_json::from_str(&text).map_err(|e| format!("Invalid JSON: {e}"))?;
+    Ok((p, root))
+}
+
+fn server_object(
+    root: &mut serde_json::Value,
+) -> Result<&mut serde_json::Map<String, serde_json::Value>, String> {
+    root.as_object_mut()
+        .ok_or_else(|| "MCP config root must be an object".to_string())?
+        .entry("mcpServers")
+        .or_insert_with(|| serde_json::json!({}))
+        .as_object_mut()
+        .ok_or_else(|| "mcpServers must be an object".to_string())
+}
 #[tauri::command]
 pub async fn list_mcp_servers(state: State<'_, AppState>) -> Result<Vec<McpServer>, String> {
     with_db(&state, |db| {
@@ -66,4 +117,119 @@ pub async fn save_mcp_config(
         return Err(e.to_string());
     }
     Ok(backup.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+pub async fn duplicate_mcp_server(
+    path: String,
+    name: String,
+    new_name: String,
+    expected: String,
+) -> Result<String, String> {
+    let (p, mut root) = load_json(&path)?;
+    let current = std::fs::read_to_string(&p).map_err(|e| e.to_string())?;
+    if format!("{:x}", sha2::Sha256::digest(current.as_bytes())) != expected {
+        return Err("This MCP config changed on disk. Reload it before saving.".into());
+    }
+    if new_name.is_empty() || new_name.len() > 96 || new_name.contains(['/', '\\']) {
+        return Err("Server name must be a simple name".into());
+    }
+    let servers = server_object(&mut root)?;
+    let value = servers
+        .get(&name)
+        .cloned()
+        .ok_or_else(|| "MCP server was not found".to_string())?;
+    if servers.contains_key(&new_name) {
+        return Err("A server with that name already exists".into());
+    }
+    servers.insert(new_name, value);
+    write_json_config(&p, &root)
+}
+
+#[tauri::command]
+pub async fn remove_mcp_server(
+    path: String,
+    name: String,
+    expected: String,
+) -> Result<String, String> {
+    let (p, mut root) = load_json(&path)?;
+    let current = std::fs::read_to_string(&p).map_err(|e| e.to_string())?;
+    if format!("{:x}", sha2::Sha256::digest(current.as_bytes())) != expected {
+        return Err("This MCP config changed on disk. Reload it before saving.".into());
+    }
+    let servers = server_object(&mut root)?;
+    if servers.remove(&name).is_none() {
+        return Err("MCP server was not found".into());
+    }
+    write_json_config(&p, &root)
+}
+
+#[tauri::command]
+pub async fn set_mcp_enabled(
+    path: String,
+    name: String,
+    enabled: bool,
+    expected: String,
+) -> Result<String, String> {
+    let (p, mut root) = load_json(&path)?;
+    let current = std::fs::read_to_string(&p).map_err(|e| e.to_string())?;
+    if format!("{:x}", sha2::Sha256::digest(current.as_bytes())) != expected {
+        return Err("This MCP config changed on disk. Reload it before saving.".into());
+    }
+    let servers = server_object(&mut root)?;
+    let value = servers
+        .get_mut(&name)
+        .ok_or_else(|| "MCP server was not found".to_string())?;
+    let object = value
+        .as_object_mut()
+        .ok_or_else(|| "MCP server entry must be an object".to_string())?;
+    object.insert("disabled".into(), serde_json::Value::Bool(!enabled));
+    write_json_config(&p, &root)
+}
+
+#[tauri::command]
+pub async fn copy_mcp_server(
+    source_path: String,
+    name: String,
+    destination_path: String,
+) -> Result<String, String> {
+    let (_, source_root) = load_json(&source_path)?;
+    let source = source_root
+        .get("mcpServers")
+        .and_then(serde_json::Value::as_object)
+        .and_then(|m| m.get(&name))
+        .cloned()
+        .ok_or_else(|| "MCP server was not found".to_string())?;
+    let destination = std::path::PathBuf::from(destination_path);
+    if !destination.is_absolute()
+        || !matches!(
+            destination.extension().and_then(|x| x.to_str()),
+            Some("json")
+        )
+    {
+        return Err("Destination must be an absolute JSON config path".into());
+    }
+    let mut root = if destination.exists() {
+        let text = std::fs::read_to_string(&destination).map_err(|e| e.to_string())?;
+        serde_json::from_str(&text).map_err(|e| format!("Invalid destination JSON: {e}"))?
+    } else {
+        serde_json::json!({})
+    };
+    let servers = server_object(&mut root)?;
+    if servers.contains_key(&name) {
+        return Err("A server with that name already exists at the destination".into());
+    }
+    servers.insert(name, source);
+    if destination.exists() {
+        write_json_config(&destination, &root)
+    } else {
+        let text = serde_json::to_string_pretty(&root).map_err(|e| e.to_string())? + "\n";
+        if let Some(parent) = destination.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+        let tmp = destination.with_extension("agenthub-tmp.json");
+        std::fs::write(&tmp, text).map_err(|e| e.to_string())?;
+        std::fs::rename(&tmp, &destination).map_err(|e| e.to_string())?;
+        Ok(destination.to_string_lossy().into_owned())
+    }
 }

@@ -53,6 +53,8 @@ fn add_json(path: &Path, agent: &str, scope: &str, out: &mut Vec<McpServer>) {
             .unwrap_or_default();
         let url = v.get("url").and_then(Value::as_str).map(str::to_owned);
         let transport = if url.is_some() { "http" } else { "stdio" };
+        let enabled = v.get("disabled").and_then(Value::as_bool) != Some(true)
+            && v.get("enabled").and_then(Value::as_bool) != Some(false);
         out.push(McpServer {
             name: name.clone(),
             agent: agent.into(),
@@ -63,7 +65,7 @@ fn add_json(path: &Path, agent: &str, scope: &str, out: &mut Vec<McpServer>) {
             args,
             env_keys,
             url,
-            enabled: true,
+            enabled,
             readable: true,
         });
     }

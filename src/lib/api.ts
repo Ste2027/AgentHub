@@ -44,6 +44,14 @@ export const api = {
   mcpConfig: (path: string) => call<McpFile>("read_mcp_config", { path }),
   saveMcpConfig: (path: string, text: string, expected: string) =>
     call<string>("save_mcp_config", { path, text, expected }),
+  duplicateMcpServer: (path: string, name: string, newName: string, expected: string) =>
+    call<string>("duplicate_mcp_server", { path, name, newName, expected }),
+  removeMcpServer: (path: string, name: string, expected: string) =>
+    call<string>("remove_mcp_server", { path, name, expected }),
+  setMcpEnabled: (path: string, name: string, enabled: boolean, expected: string) =>
+    call<string>("set_mcp_enabled", { path, name, enabled, expected }),
+  copyMcpServer: (sourcePath: string, name: string, destinationPath: string) =>
+    call<string>("copy_mcp_server", { sourcePath, name, destinationPath }),
   context: (sessionId: string) =>
     call<SessionContext>("session_context", { sessionId }),
   memories: (query = "", scope = "", trash = false, offset = 0) =>
