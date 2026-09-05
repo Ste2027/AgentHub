@@ -60,6 +60,27 @@ it("reports export cancellation without claiming success", async () => {
   await waitFor(() => expect(mocks.saveText).toHaveBeenCalled());
   expect(screen.queryByRole("status")).not.toBeInTheDocument();
 });
+it("exports a versioned JSON package with edits and only explicitly selected memories", async () => {
+  mocks.memories.mockResolvedValue({ items: [
+    { id: "include", title: "Conventions", scope: "global", body: "Use migrations", agents: [] },
+    { id: "exclude", title: "Private draft", scope: "global", body: "Do not share", agents: [] },
+  ], total: 2 });
+  render(<ContextExport sessionId="s" onClose={vi.fn()} />);
+  fireEvent.change(await screen.findByLabelText("Task"), { target: { value: "Reviewed goal" } });
+  fireEvent.click(screen.getByRole("checkbox", { name: "Conventions global" }));
+  fireEvent.change(screen.getByLabelText("Export format"), { target: { value: "json" } });
+  fireEvent.click(screen.getByRole("button", { name: "Export context" }));
+  await waitFor(() => expect(mocks.saveText).toHaveBeenCalled());
+  const [text, filename] = mocks.saveText.mock.calls[0];
+  const result = JSON.parse(text);
+  expect(filename).toBe("agenthub-context.json");
+  expect(result.format).toBe("agenthub.context");
+  expect(result.version).toBe(1);
+  expect(result.context.task).toBe("Reviewed goal");
+  expect(result.target_agent).toBe("OpenAI Codex");
+  expect(result.memories.map((memory: { id: string }) => memory.id)).toEqual(["include"]);
+  expect(text).not.toContain("Do not share");
+});
 it("shows source failures", async () => {
   mocks.context.mockRejectedValue(new Error("Session missing"));
   render(<ContextExport sessionId="s" onClose={vi.fn()} />);

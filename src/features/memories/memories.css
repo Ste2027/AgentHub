@@ -166,6 +166,15 @@
 .context-metadata {
   overflow-wrap: anywhere;
 }
+.context-editor footer {
+  flex-wrap: wrap;
+}
+.context-editor footer label {
+  margin: 0;
+}
+.context-editor footer select {
+  width: auto;
+}
 .memory-editor fieldset {
   display: flex;
   flex-wrap: wrap;

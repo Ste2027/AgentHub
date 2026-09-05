@@ -19,6 +19,7 @@ export function ContextExport({
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [copied, setCopied] = useState(false);
+  const [format, setFormat] = useState<"markdown" | "json">("markdown");
   const [memories, setMemories] = useState<Memory[]>([]);
   const [selectedMemoryIds, setSelectedMemoryIds] = useState<string[]>([]);
   useEffect(() => {
@@ -54,16 +55,22 @@ export function ContextExport({
     try {
       if (
         await saveText(
-          formatContext(
+          format === "json" ? JSON.stringify({
+            format: "agenthub.context",
+            version: 1,
+            target_agent: target,
+            context,
+            memories: memories.filter((m) => selectedMemoryIds.includes(m.id)),
+          }, null, 2) : formatContext(
             context,
             target,
             memories.filter((m) => selectedMemoryIds.includes(m.id)),
           ),
-          "agenthub-context.md",
+          format === "json" ? "agenthub-context.json" : "agenthub-context.md",
         )
       )
         setNotice(
-          "Context exported. Open the Markdown file in your next agent session.",
+          "Context exported. Review the file before sharing it with your next agent.",
         );
     } catch (e) {
       setError(errorMessage(e));
@@ -212,7 +219,11 @@ export function ContextExport({
             </p>
           )}
           <footer>
-            <span className="muted">No upload · Markdown export</span>
+            <label htmlFor="context-format">Export format</label>
+            <select id="context-format" value={format} onChange={(event) => setFormat(event.target.value as "markdown" | "json")}>
+              <option value="markdown">Markdown</option>
+              <option value="json">JSON</option>
+            </select>
             <Button
               variant="outline"
               disabled={saving}
