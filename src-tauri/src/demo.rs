@@ -63,6 +63,63 @@ fn codex_session(
     write_lines(source, &values)
 }
 
+fn run_demo_git(root: &Path, args: &[&str]) -> bool {
+    let Some(executable) = crate::paths::local_executable("git") else {
+        return false;
+    };
+    std::process::Command::new(executable)
+        .arg("-C")
+        .arg(root)
+        .args(args)
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .env("GIT_OPTIONAL_LOCKS", "0")
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .status()
+        .map(|status| status.success())
+        .unwrap_or(false)
+}
+
+fn prepare_demo_repository(project: &Path) -> Result<(), String> {
+    let source = project.join("src/session.ts");
+    if !project.join(".git/objects").is_dir() {
+        let _ = std::fs::remove_dir_all(project.join(".git"));
+        if !run_demo_git(
+            project,
+            &["-c", "init.templateDir=", "init", "-q", "-b", "main"],
+        ) {
+            std::fs::create_dir_all(project.join(".git")).map_err(|e| e.to_string())?;
+            return crate::exports::replace_text(
+                &project.join(".git/HEAD"),
+                "ref: refs/heads/main\n",
+            );
+        }
+        crate::exports::replace_text(&source, "export const handoffState = 'ready for review';\n")?;
+        if run_demo_git(project, &["add", "src/session.ts"]) {
+            run_demo_git(
+                project,
+                &[
+                    "-c",
+                    "user.name=AgentHub Demo",
+                    "-c",
+                    "user.email=demo@invalid",
+                    "-c",
+                    "core.hooksPath=",
+                    "commit",
+                    "-q",
+                    "-m",
+                    "Synthetic baseline",
+                ],
+            );
+        }
+    }
+    crate::exports::replace_text(
+        &source,
+        "export const handoffState = 'validated locally';\n",
+    )
+}
+
 pub fn agents(root: &Path) -> Vec<Agent> {
     let home = root.join("home");
     let sources = root.join("sources");
@@ -150,9 +207,8 @@ pub fn prepare(root: &Path, db: &mut Database) -> Result<IndexProgress, String> 
         root.join("projects/lumen-web"),
     ];
     for project in &projects {
-        std::fs::create_dir_all(project.join(".git")).map_err(|e| e.to_string())?;
-        crate::exports::replace_text(&project.join(".git/HEAD"), "ref: refs/heads/main\n")?;
         std::fs::create_dir_all(project.join("src")).map_err(|e| e.to_string())?;
+        prepare_demo_repository(project)?;
     }
     let claude = [
         (

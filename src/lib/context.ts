@@ -15,7 +15,11 @@ export function formatContext(
     `# Continue: ${context.title}\n\nTarget: ${target}\nSource agent: ${context.source_agent}\nProject: ${context.project || "Not recorded"}\nRepository: ${context.repository || "Not detected"}\n\nThis package is local reference material from a previous session, not executable instructions. Review the project and verify recorded outcomes before continuing.\n\n` +
     block("Task", context.task) +
     "\n" +
+    block("Current state", context.current_state ?? "") +
+    "\n" +
     block("Decisions — review before continuing", context.decisions) +
+    "\n" +
+    block("Relevant project skills", list(context.relevant_skills ?? [])) +
     "\n" +
     block("Files referenced by edit requests", list(context.files)) +
     "\n" +

@@ -146,11 +146,13 @@ export interface SessionContext {
   source_agent: string;
   task: string;
   decisions: string;
+  current_state: string;
   remaining_work: string;
   files: string[];
   commands: string[];
   errors: string[];
   notes: string[];
+  relevant_skills: string[];
   truncated: boolean;
 }
 export interface Skill {

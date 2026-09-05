@@ -2,6 +2,7 @@ use crate::database::Database;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::io::Read;
 type Result<T> = std::result::Result<T, String>;
 #[derive(Debug, Serialize)]
 pub struct Metric {
@@ -38,12 +39,89 @@ pub struct SessionContext {
     pub source_agent: String,
     pub task: String,
     pub decisions: String,
+    pub current_state: String,
     pub remaining_work: String,
     pub files: Vec<String>,
     pub commands: Vec<String>,
     pub errors: Vec<String>,
     pub notes: Vec<String>,
+    pub relevant_skills: Vec<String>,
     pub truncated: bool,
+}
+
+fn git_output(project: &std::path::Path, args: &[&str]) -> Option<String> {
+    let executable = crate::paths::local_executable("git")?;
+    let output = tempfile::NamedTempFile::new().ok()?;
+    let stdout = output.reopen().ok()?;
+    let mut child = std::process::Command::new(executable)
+        .arg("-C")
+        .arg(project)
+        .args(["-c", "core.pager=cat", "-c", "pager.diff=false"])
+        .args(args)
+        .env("GIT_TERMINAL_PROMPT", "0")
+        .env("GIT_OPTIONAL_LOCKS", "0")
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::from(stdout))
+        .stderr(std::process::Stdio::null())
+        .spawn()
+        .ok()?;
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(2);
+    let status = loop {
+        if let Some(status) = child.try_wait().ok()? {
+            break status;
+        }
+        if std::time::Instant::now() >= deadline {
+            let _ = child.kill();
+            let _ = child.wait();
+            return None;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    };
+    if !status.success() {
+        return None;
+    }
+    let mut text = String::new();
+    output
+        .reopen()
+        .ok()?
+        .take(256 * 1024 + 1)
+        .read_to_string(&mut text)
+        .ok()?;
+    if text.len() > 256 * 1024 {
+        text.truncate(256 * 1024);
+        text.push_str("\n[AgentHub truncated the Git output at 256 KiB.]\n");
+    }
+    Some(text)
+}
+
+fn git_context(project: &str) -> String {
+    let path = std::path::Path::new(project);
+    if !crate::paths::has_local_git_marker(path) {
+        return "Not available: the session project is not a local Git repository.".into();
+    }
+    let Some(status) = git_output(
+        path,
+        &["status", "--porcelain=v1", "--untracked-files=normal"],
+    ) else {
+        return "Unavailable: Git state could not be read safely within two seconds.".into();
+    };
+    let Some(diff) = git_output(
+        path,
+        &[
+            "diff",
+            "--no-ext-diff",
+            "--no-textconv",
+            "--unified=2",
+            "--",
+        ],
+    ) else {
+        return "Unavailable: Git diff could not be read safely within two seconds.".into();
+    };
+    if status.trim().is_empty() && diff.trim().is_empty() {
+        "Clean working tree.".into()
+    } else {
+        format!("Git status:\n{status}\nWorking tree diff:\n{diff}")
+    }
 }
 #[derive(Default, Debug)]
 pub struct ToolDetails {
@@ -191,21 +269,24 @@ impl Database {
             title: session.title,
             project: session.project,
             repository: String::new(),
-            git_diff: "Not collected: AgentHub does not execute Git commands.".into(),
+            git_diff: "Not available: the session project is not a local Git repository.".into(),
             source_agent: session.agent,
             task: String::new(),
             decisions: String::new(),
+            current_state: String::new(),
             remaining_work: String::new(),
             files: Vec::new(),
             commands: Vec::new(),
             errors: Vec::new(),
             notes: Vec::new(),
+            relevant_skills: Vec::new(),
             truncated: false,
         };
         if !context.project.is_empty()
             && std::path::Path::new(&context.project).join(".git").exists()
         {
             context.repository = context.project.clone();
+            context.git_diff = git_context(&context.project);
         }
         let mut statement = self
             .conn
@@ -266,8 +347,60 @@ impl Database {
         context.commands = commands.into_iter().collect();
         context.errors = errors.into_iter().collect();
         context.notes = notes.into_iter().collect();
+        context.current_state = context.notes.last().cloned().unwrap_or_default();
         context.decisions = decisions.into_iter().collect::<Vec<_>>().join("\n");
         context.remaining_work = todos.into_iter().collect::<Vec<_>>().join("\n");
+        if !context.project.is_empty() {
+            context.relevant_skills = crate::skills::discover_projects(&[context.project.clone()])
+                .into_iter()
+                .map(|skill| format!("{} — {}", skill.name, skill.description))
+                .collect();
+        }
         Ok(context)
+    }
+}
+
+#[cfg(test)]
+mod git_context_tests {
+    use super::*;
+
+    fn git(root: &std::path::Path, args: &[&str]) {
+        let executable =
+            crate::paths::local_executable("git").expect("Git is required to test Git context");
+        let status = std::process::Command::new(executable)
+            .arg("-C")
+            .arg(root)
+            .args(args)
+            .env("GIT_TERMINAL_PROMPT", "0")
+            .status()
+            .unwrap();
+        assert!(status.success());
+    }
+
+    #[test]
+    fn captures_bounded_working_tree_state_without_external_diff_tools() {
+        let temp = tempfile::tempdir().unwrap();
+        git(temp.path(), &["init", "-q", "-b", "main"]);
+        std::fs::write(temp.path().join("note.txt"), "before\n").unwrap();
+        git(temp.path(), &["add", "note.txt"]);
+        git(
+            temp.path(),
+            &[
+                "-c",
+                "user.name=AgentHub Test",
+                "-c",
+                "user.email=test@invalid",
+                "commit",
+                "-q",
+                "-m",
+                "fixture",
+            ],
+        );
+        std::fs::write(temp.path().join("note.txt"), "after\n").unwrap();
+        let context = git_context(&temp.path().to_string_lossy());
+        assert!(context.contains("Git status:"));
+        assert!(context.contains("Working tree diff:"));
+        assert!(context.contains("+after"));
+        assert_eq!(crate::paths::git_branch(temp.path()), "main");
     }
 }

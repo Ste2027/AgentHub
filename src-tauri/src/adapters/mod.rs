@@ -117,35 +117,9 @@ pub fn agents(settings: &Settings) -> Vec<Agent> {
 }
 
 fn command_exists(names: &[&str]) -> bool {
-    let Some(path) = std::env::var_os("PATH") else {
-        return false;
-    };
-    #[cfg(windows)]
-    let extensions = std::env::var_os("PATHEXT")
-        .map(|value| {
-            value
-                .to_string_lossy()
-                .split(';')
-                .map(str::to_ascii_lowercase)
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_else(|| vec![".exe".into(), ".cmd".into(), ".bat".into()]);
-    std::env::split_paths(&path)
-        .filter(|directory| crate::paths::is_local_absolute(directory))
-        .any(|directory| {
-            names.iter().any(|name| {
-                #[cfg(windows)]
-                {
-                    extensions
-                        .iter()
-                        .any(|extension| directory.join(format!("{name}{extension}")).is_file())
-                }
-                #[cfg(not(windows))]
-                {
-                    directory.join(name).is_file()
-                }
-            })
-        })
+    names
+        .iter()
+        .any(|name| crate::paths::local_executable(name).is_some())
 }
 pub fn string(v: &Value, key: &str) -> String {
     v.get(key)

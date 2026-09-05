@@ -180,14 +180,18 @@ export function ContextExport({
               <option key={t}>{t}</option>
             ))}
           </select>
-          {(["task", "decisions", "remaining_work"] as const).map((key) => (
+          {(
+            ["task", "current_state", "decisions", "remaining_work"] as const
+          ).map((key) => (
             <div key={key}>
               <label htmlFor={`context-${key}`}>
                 {key === "task"
                   ? "Task"
-                  : key === "decisions"
-                    ? "Important decisions"
-                    : "Remaining work / TODOs"}
+                  : key === "current_state"
+                    ? "Current state"
+                    : key === "decisions"
+                      ? "Important decisions"
+                      : "Remaining work / TODOs"}
               </label>
               <textarea
                 id={`context-${key}`}
@@ -198,24 +202,28 @@ export function ContextExport({
               />
             </div>
           ))}
-          {(["files", "commands", "errors"] as const).map((key) => (
-            <div key={key}>
-              <label htmlFor={`context-${key}`}>
-                {key === "files"
-                  ? "File edit requests"
-                  : key === "commands"
-                    ? "Recorded shell requests"
-                    : "Recorded errors — remove resolved items"}
-              </label>
-              <textarea
-                id={`context-${key}`}
-                rows={3}
-                value={context[key].join("\n")}
-                onChange={(e) => change(key, e.target.value.split("\n"))}
-                maxLength={30000}
-              />
-            </div>
-          ))}
+          {(["files", "commands", "errors", "relevant_skills"] as const).map(
+            (key) => (
+              <div key={key}>
+                <label htmlFor={`context-${key}`}>
+                  {key === "files"
+                    ? "File edit requests"
+                    : key === "commands"
+                      ? "Recorded shell requests"
+                      : key === "errors"
+                        ? "Recorded errors — remove resolved items"
+                        : "Relevant project skills"}
+                </label>
+                <textarea
+                  id={`context-${key}`}
+                  rows={3}
+                  value={(context[key] ?? []).join("\n")}
+                  onChange={(e) => change(key, e.target.value.split("\n"))}
+                  maxLength={30000}
+                />
+              </div>
+            ),
+          )}
           {context.truncated && (
             <p className="notice">
               This is a compact selection. The original timeline retains the
@@ -230,9 +238,10 @@ export function ContextExport({
               <strong>Repository:</strong>{" "}
               {context.repository || "Not detected"}
             </p>
-            <p>
-              <strong>Git diff:</strong> {context.git_diff}
-            </p>
+            <details>
+              <summary>Git status and diff</summary>
+              <pre>{context.git_diff}</pre>
+            </details>
           </div>
           {(memories.length > 0 || memoryOffset < memoryTotal) && (
             <fieldset className="context-memories">

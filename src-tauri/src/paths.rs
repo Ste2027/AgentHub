@@ -64,3 +64,33 @@ pub fn git_branch(path: &Path) -> String {
         .map(str::to_owned)
         .unwrap_or_else(|| value.chars().take(12).collect())
 }
+
+pub fn local_executable(name: &str) -> Option<std::path::PathBuf> {
+    let path = std::env::var_os("PATH")?;
+    #[cfg(windows)]
+    let extensions = std::env::var_os("PATHEXT")
+        .map(|value| {
+            value
+                .to_string_lossy()
+                .split(';')
+                .map(str::to_ascii_lowercase)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_else(|| vec![".exe".into(), ".cmd".into(), ".bat".into()]);
+    std::env::split_paths(&path)
+        .filter(|directory| is_local_absolute(directory))
+        .find_map(|directory| {
+            #[cfg(windows)]
+            {
+                extensions
+                    .iter()
+                    .map(|extension| directory.join(format!("{name}{extension}")))
+                    .find(|candidate| candidate.is_file())
+            }
+            #[cfg(not(windows))]
+            {
+                let candidate = directory.join(name);
+                candidate.is_file().then_some(candidate)
+            }
+        })
+}
