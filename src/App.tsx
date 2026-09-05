@@ -213,6 +213,11 @@ export function App() {
       }));
       return;
     }
+    if (hit.entity_type === "skill" || hit.entity_type === "mcp") {
+      setSelected(null);
+      setPage(hit.entity_type === "skill" ? "skills" : "mcp");
+      return;
+    }
     try {
       const found = await api.session(hit.session_id);
       if (found) {

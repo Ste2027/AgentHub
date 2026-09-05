@@ -47,7 +47,7 @@ export interface Overview {
   database_path: string;
 }
 export interface SearchHit {
-  entity_type?: "session" | "memory";
+  entity_type?: "session" | "memory" | "skill" | "mcp";
   entity_id?: string;
   session_id: string;
   title: string;

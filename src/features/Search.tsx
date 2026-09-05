@@ -27,10 +27,50 @@ export function Search({
     }
     setLoading(true);
     const timer = setTimeout(() => {
-      api
-        .search(query)
-        .then((data) => {
-          if (active) setHits(data);
+      Promise.all([
+        api.search(query),
+        api.skills().catch(() => []),
+        api.mcpServers().catch(() => []),
+      ])
+        .then(([data, skills, mcp]) => {
+          const q = query.toLocaleLowerCase();
+          const resourceHits: SearchHit[] = [
+            ...skills
+              .filter((s) =>
+                `${s.name} ${s.description} ${s.agent} ${s.path}`
+                  .toLocaleLowerCase()
+                  .includes(q),
+              )
+              .map((s) => ({
+                entity_type: "skill" as const,
+                entity_id: s.path,
+                session_id: "",
+                title: s.name,
+                agent: s.agent,
+                project: "",
+                text: s.description || s.path,
+                kind: "skill" as const,
+                ordinal: 0,
+              })),
+            ...mcp
+              .filter((s) =>
+                `${s.name} ${s.command || ""} ${s.url || ""} ${s.agent}`
+                  .toLocaleLowerCase()
+                  .includes(q),
+              )
+              .map((s) => ({
+                entity_type: "mcp" as const,
+                entity_id: s.config_path,
+                session_id: "",
+                title: s.name,
+                agent: s.agent,
+                project: "",
+                text: s.command || s.url || "",
+                kind: "mcp" as const,
+                ordinal: 0,
+              })),
+          ];
+          if (active) setHits([...data, ...resourceHits]);
         })
         .catch((e) => {
           if (active) setError(errorMessage(e));
