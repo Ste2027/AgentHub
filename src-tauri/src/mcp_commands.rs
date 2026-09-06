@@ -672,7 +672,7 @@ mod tests {
         let json_path = root.join("target.json");
         std::fs::write(
             &toml_path,
-            "# keep this comment\nmodel = \"gpt-6-astra\"\n\n[mcp_servers.docs]\ncommand = \"npx\"\nargs = [\"docs-server\"]\nenv = { API_TOKEN = \"secret\" }\n",
+            "# keep this comment\nmodel = \"example-model\"\n\n[mcp_servers.docs]\ncommand = \"npx\"\nargs = [\"docs-server\"]\nenv = { API_TOKEN = \"secret\" }\n",
         )
         .unwrap();
         std::fs::write(&json_path, r#"{"mcpServers":{}}"#).unwrap();
