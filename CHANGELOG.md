@@ -1,15 +1,20 @@
 # Changelog
 
-## 0.1.0 — Unreleased
+## 0.1.1 — 2026-09-06
 
-- Initial Tauri desktop application with a React/TypeScript interface.
-- SQLite migrations, transactional session storage and FTS5 search.
-- Read-only Claude Code and Codex JSONL adapters with incremental indexing.
-- Session filters, paginated timelines, project discovery and local agent detection.
-- Persistent path and appearance settings, privacy information and import diagnostics.
-- Synthetic parser/storage tests, frontend behavior tests and Windows CI workflow.
-- Memories with revisioned local notes, import/export and handoff selection.
-- Activity analytics based only on recorded events, plus read-only cross-agent context export.
-- Skills discovery, review/edit with backups and rollback; MCP discovery and guarded JSON editing.
-- Skills marketplace browsing for public GitHub repositories, explicit source list and catalog search.
-- First-run onboarding, provider compatibility matrix and expanded universal search.
+- Added an isolated synthetic demo workspace and real populated product visuals.
+- Completed cross-agent context review, native clipboard copy and Markdown/JSON export.
+- Added full skill-package copy, duplicate, import/export, trash/restore and guarded editing.
+- Added safe Claude JSON and Codex TOML MCP mutations with secret masking and rollback.
+- Completed bounded marketplace package inspection and atomic installation.
+- Expanded project details, activity, universal search routing and onboarding indexing.
+- Corrected installation detection so config/session remnants do not count as installed apps.
+- Refined the compatibility matrix, dialogs, responsive layout and light theme.
+- Added security, migration, performance and UI regression coverage.
+
+## 0.1.0 — 2026-09-02
+
+- Initial Tauri desktop application with React, TypeScript, Rust and SQLite.
+- Read-only Claude Code and OpenAI Codex session adapters.
+- Session browser, timelines, projects, local full-text search and path settings.
+- Windows, macOS and Linux release workflow.

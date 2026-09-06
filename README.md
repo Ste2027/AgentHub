@@ -2,174 +2,178 @@
 
 **The local control center for all your AI coding agents.**
 
-Codex. Claude Code. One place to find the work you already did.
+Claude Code · OpenAI Codex · More adapters coming
 
-Your coding agents store conversations, tool calls and project context in different directories. AgentHub brings that history into a private desktop workspace: browse sessions, inspect a command, find a decision, and follow a project across agents.
+[Download AgentHub v0.1.1](https://github.com/Ste2027/AgentHub/releases/tag/v0.1.1) · MIT · Tauri + Rust + React · No telemetry
 
-**0.1.0 · MIT · Tauri + Rust + React · No telemetry**
+![AgentHub cross-agent handoff demo](docs/demo/agenthub-handoff.gif)
 
-![AgentHub empty workspace — actual browser preview](docs/screenshots/overview.png)
+AgentHub indexes the coding-agent history already on your machine. Browse sessions, search across projects, preserve useful memories, review skills and MCP configuration, then carry a compact context package from Claude Code to Codex or back again.
 
-## Why AgentHub?
+| Unified Sessions | Universal Search | Cross-Agent Context | Skills | MCP | Local-first Privacy |
+| --- | --- | --- | --- | --- | --- |
+| Claude and Codex history in one timeline | Sessions, messages, commands, errors, projects, memories, skills and MCP | Editable Markdown or JSON handoff packages | Discover, review, edit, copy, import and restore | Inspect and safely change JSON or TOML servers | Local SQLite, no account, no telemetry |
 
-You remember solving the problem. You do not remember which agent, project or conversation it was in. AgentHub gives your existing local transcripts a searchable home, without uploading them or running another model.
+## Quick install
 
-## Features
+Download the installer for your platform from the [latest release](https://github.com/Ste2027/AgentHub/releases/latest):
 
-| Capability       | What works in this release                                                                                  |
-| ---------------- | ----------------------------------------------------------------------------------------------------------- |
-| Session browser  | Claude Code and Codex JSONL imports; filter by agent and project; newest first; pagination                  |
-| Timeline         | User/assistant messages, tool arguments, command text, outputs and recorded errors                          |
-| Universal search | Ctrl/Cmd + K; full-text search over session titles, project paths and timeline content                      |
-| Projects         | Discovered from transcript working directories, with session counts and local Git detection                 |
-| Indexing         | Manual incremental scans, unchanged-file skipping, per-file transactions, progress and import diagnostics   |
-| Agent paths      | Automatic directory detection and persistent absolute-path overrides                                        |
-| Appearance       | Dark by default; optional light theme; keyboard-accessible search dialog                                    |
-| Memories         | Global/project/agent notes with tags, search, revisions, trash, import/export and associations              |
-| Activity         | Truthful local counts for sessions, events, models, tools, file/shell requests and recorded errors          |
-| Context export   | Editable compact handoff with task, decisions, files, commands, errors and TODOs                            |
-| Skills/MCP       | Discovery, metadata, search/filter, SKILL.md review/edit/save/copy/remove and safe MCP JSON review/edit; secrets stay hidden |
-| Marketplace      | Opt-in browsing of public GitHub skill repositories, source list, catalog search, exact SKILL.md review and explicit install |
-| Privacy          | Read-only source access; a local SQLite index; no account, telemetry or inference API                       |
+- **Windows:** NSIS setup or MSI (`x64`)
+- **macOS:** DMG (architecture shown in the release asset)
+- **Linux:** AppImage, DEB or RPM (`x86_64`)
 
-There are no simulated charts, fabricated success rates or automatic agent commands. Skill edits, copies, installs and JSON MCP edits require an explicit confirmation, create a backup where applicable and use atomic replacement with stale-file detection.
+Release packages are currently unsigned. Your operating system may show its standard warning for an unidentified developer.
 
-## Supported agents
-
-| Agent          | Status                         | Default session directory                             |
-| -------------- | ------------------------------ | ----------------------------------------------------- |
-| Claude Code    | JSONL adapter                  | `~/.claude/projects`                                  |
-| OpenAI Codex   | Rollout JSONL adapter          | `$CODEX_HOME/sessions`, otherwise `~/.codex/sessions` |
-| Cursor         | Reserved provider, unsupported | —                                                     |
-| Gemini CLI     | Reserved provider, unsupported | —                                                     |
-| OpenCode       | Reserved provider, unsupported | —                                                     |
-| GitHub Copilot | Reserved provider, unsupported | —                                                     |
-
-“Detected” means the session directory exists. AgentHub does not connect to, launch, or authenticate with an agent. Provider formats are version-dependent; see [adapter support and assumptions](docs/adapters.md).
-
-## Installation
-
-Build from source, or download a Windows artifact from a tagged GitHub release when one is available. Release artifacts are unsigned until a maintainer configures platform signing.
-
-Requirements:
-
-- Node.js 24 and npm.
-- Rust stable **1.94 or newer** and Cargo on PATH.
-- The [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/). On Windows, install the C++ Build Tools workload and WebView2. macOS requires Xcode command-line tools; Linux requires its WebKitGTK development packages.
-
-From the repository directory:
+To build from source:
 
 ```sh
 npm ci
 npm run desktop
 ```
 
-On first launch:
+Node.js 24, Rust 1.94 or newer, and the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/) are required.
 
-1. Follow or skip the short onboarding panel.
-2. Open **Agents** to inspect detected directories and the dedicated **Skills**, **MCP** and **Marketplace** tabs.
-3. If necessary, set absolute paths in **Settings**. Point Claude Code at `projects` and Codex at `sessions`, not their configuration files.
-4. Choose **Index sessions**. Source files remain untouched.
-5. Browse **Sessions**, **Projects**, **Memories**, **Skills**, **MCP** or **Marketplace**, or use **Ctrl/Cmd + K** to search.
+## Why AgentHub
 
-`npm run dev` starts an honest browser-only UI preview at `http://127.0.0.1:1420`. Local data operations require the desktop runtime. A browser preview is not a substitute for the desktop application.
+Useful work gets split across tools. You remember solving a problem, but not which agent, project or conversation contains the decision. AgentHub reads supported local files into one searchable workspace and never starts an agent, executes a transcript command, or uploads your history.
 
-### Build
+![AgentHub populated dashboard](docs/screenshots/dashboard.png)
 
-```sh
-npm run desktop:build
+## Demo
+
+Start an isolated, fully synthetic workspace without scanning normal agent folders:
+
+```powershell
+$env:AGENTHUB_DEMO="1"
+npm run desktop
 ```
 
-Tauri writes the executable and platform bundles under `src-tauri/target/release`. Windows bundles are unsigned until a release maintainer configures signing. To build an embedded-assets development executable without an installer:
+The demo contains sessions, projects, tool calls, an error, memories, skills, MCP servers and a Claude-to-Codex handoff. Demo mode is clearly labelled in the UI.
 
-```sh
-npm run desktop:build -- --debug --no-bundle
-```
+![Copy a complete skill package](docs/demo/skill-copy.gif)
+
+## Features
+
+- **Dashboard and activity:** real counts for indexed sessions, projects, events, tool calls, models and recorded errors.
+- **Sessions:** filters for agent, project, model and date; pagination; direct opening; paginated timelines for large sessions.
+- **Timeline:** messages, tool calls, terminal commands, tool results, file requests and recorded errors remain inert text.
+- **Universal Search:** press `Ctrl/Cmd + K` to search local indexed content and open the matching session event, project, memory, skill or MCP server.
+- **Projects:** recorded path, local Git state, branch, agents, session count, memories, skills, errors, recent work and referenced files.
+- **Memories:** create, edit, duplicate, search, filter, trash, restore, import, export, export all and explicitly add selected memories to a handoff.
+- **Skills:** recursively discover and inspect complete packages; edit `SKILL.md`; duplicate, copy, remove, restore, import and export with conflict and stale-file checks.
+- **Marketplace:** opt-in browsing of public GitHub repositories with a bounded file tree, scripts/MCP warnings, exact destination preview and atomic install. Remote scripts are never run.
+- **MCP:** discover individual Claude JSON and Codex TOML servers; mask secrets; add, inspect, edit, duplicate, enable/disable, remove, copy, validate and roll back.
+- **Cross-agent context:** preview and edit task, state, decisions, TODOs, files, commands, errors, selected memories, relevant skills, repository and bounded Git diff; copy or export Markdown/JSON.
+- **Settings:** automatic defaults plus portable path overrides, isolated storage, dark/light themes and explicit manual indexing.
+
+## Supported agents
+
+Detection checks the executable, configuration directory and session directory independently. Only an executable found on the machine counts as an installed agent in the sidebar. Old history or a leftover configuration folder is labelled separately.
+
+| Agent | Installation detection | Sessions | Skills | MCP | Current status |
+| --- | --- | --- | --- | --- | --- |
+| Claude Code | Executable + local paths | Supported JSONL | Supported | Full JSON management | Supported |
+| OpenAI Codex | Executable + local paths | Supported rollout JSONL | Supported | Full TOML management | Supported |
+| Cursor | Executable + config | Planned | Planned | Planned | Detection only |
+| Gemini CLI | Executable + config | Planned | Planned | Planned | Detection only |
+| OpenCode | Executable + config | Planned | Planned | Planned | Detection only |
+| GitHub Copilot | Executable + config | Planned | Planned | Planned | Detection only |
+
+AgentHub never invents an adapter when a stable, testable local format is unavailable. See [adapter assumptions and fixtures](docs/adapters.md).
+
+![Agent detection states](docs/screenshots/agents.png)
+
+![Adapter compatibility matrix](docs/screenshots/agents-compatibility.png)
+
+## Cross-agent handoff
+
+Open a session and choose **Continue with another agent**. AgentHub derives a compact package rather than dumping the whole conversation. Edit every field, choose memories explicitly, inspect the Git context, then copy or export it.
+
+![Editable Claude to Codex context package](docs/screenshots/context-export.png)
+
+## Privacy
+
+- No telemetry, account, cloud backend, AI API call, remote font or automatic upload.
+- Original transcripts are opened read-only and never modified.
+- AgentHub writes only after an explicit user action. Skill and MCP mutations use backups, expected hashes, atomic replacement, parse validation and rollback.
+- MCP secret values are masked in normal views. The explicit editor reveals local values only while it is open.
+- Marketplace access happens only after **Browse** or **Inspect** and is limited to public GitHub API/raw content.
+- Commands, scripts and tool calls are displayed as text and are never executed.
+
+The SQLite index is not encrypted and may contain private transcript text. Protect the application data directory with your operating-system account and disk encryption. The exact database path appears under **Settings → Local storage**.
+
+## Installation and storage
+
+On first launch, finish onboarding and choose **Index my sessions**. AgentHub uses the supported agents' standard per-user directories. Path overrides are optional and global: no developer-specific path is compiled into the app.
+
+For portable or isolated storage, set `AGENTHUB_DATA_DIR` to an absolute local directory before launch. To reset the index, close AgentHub and remove `agenthub.db` plus adjacent `-wal`/`-shm` files. Source transcripts remain untouched.
+
+`npm run dev` provides a browser-only preview. Local indexing, file review and mutations require the Tauri desktop app.
 
 ## Architecture
 
 ```text
-React views → typed IPC client → Tauri commands
-                                  ↓
-                         Rust services + SQLite
-                                  ↑
-                     Claude / Codex adapters
-                                  ↑
-                      Local JSONL transcripts
+React views → typed Tauri IPC → Rust services → SQLite + FTS5
+                                      ↑
+                         Claude / Codex adapters
+                                      ↑
+                           local JSONL transcripts
 ```
 
-```text
-src/
-  components/      Shared UI and shadcn-style primitives
-  features/        Workspace pages, timeline, search, settings
-  lib/             Typed IPC boundary and view models
-  test/            Frontend behavior tests
-src-tauri/
-  src/adapters/    Provider registry and isolated parsers
-  src/database.rs Transactions, migrations, queries and FTS5
-  src/indexer.rs  Bounded file discovery and incremental import
-  src/desktop.rs Tauri boundary and background work
-  migrations/    Versioned schema
-  tests/         Synthetic parser, storage and indexing tests
-docs/            Design decisions and support limits
-```
+The Rust core parses bounded input and runs database work off the UI thread. Provider adapters normalize stable source records into sessions and ordered events. Memories live in versioned SQLite tables; skills and MCP configuration remain file-backed. See [architecture](docs/architecture.md).
 
-The Rust core builds without Tauri, so parsing and database tests need no GUI. Blocking work runs outside the UI thread. The current MVP serializes database operations with a mutex; large scans can delay queries while progress events continue.
+## Adapter guide
 
-The schema stores a session once and its ordered events once. Messages, commands and tool results share that event model instead of duplicating transcript text across multiple domain tables. Memories use their own versioned table and FTS index; skills and MCP remain file-backed resources, so AgentHub can review and edit them without copying secrets into SQLite.
+A new session adapter needs an authoritative format reference, bounded traversal, synthetic normal/corrupt fixtures and an explicit capability status. Start with [docs/adapters.md](docs/adapters.md) and [CONTRIBUTING.md](CONTRIBUTING.md). Do not submit real transcripts.
 
-See [architecture details](docs/architecture.md).
+## Security
 
-## Privacy
-
-- No telemetry libraries, cloud backend, accounts, AI API calls or remote fonts.
-- Marketplace network access is opt-in and limited to public GitHub API/raw content after an explicit Browse or Inspect click. No GitHub token is used.
-- Transcript commands and HTML are inert text. They are never executed or rendered as active markup.
-- Agent transcripts are opened read-only. Explicit skill or MCP changes write the selected local file only after confirmation, with stale-file checks and adjacent backups.
-- The production webview has a restrictive content security policy and no shell/HTTP/filesystem plugins.
-- Source transcripts and the index can contain secrets. The index is **not encrypted**. Use OS account isolation and disk encryption.
-- Source deletion does not delete archived sessions from the index. Changing a configured directory does not remove old imports.
-
-The exact database path appears in **Settings → Local storage**. The default is Tauri's application-local-data directory for `dev.agenthub.desktop`, with the filename `agenthub.db`.
-
-For portable or isolated test storage, set `AGENTHUB_DATA_DIR` to an absolute directory before starting the app. To reset an index, close AgentHub, then remove its `agenthub.db` and any adjacent `agenthub.db-wal` / `agenthub.db-shm`. This removes only the local archive and preferences; original transcripts are unaffected.
-
-## Verification
-
-```sh
-npm run check
-cargo test --manifest-path src-tauri/Cargo.toml --locked
-cargo fmt --manifest-path src-tauri/Cargo.toml --check
-cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --features desktop --locked -- -D warnings
-```
-
-The GitHub Actions workflow runs these checks and a Windows desktop build. No private transcripts are included in tests or screenshots. See [local verification record](docs/verification.md) for what was actually run during development. For the memory workflow, see [using memories](docs/memories.md). The [name check](docs/name-collision.md) records the public collision review.
-
-## Current limits
-
-- Indexing is manual; changed files are fully reparsed. Metadata fingerprints track file size and nanosecond modification time. Use **Rebuild index** when a tool preserves both while rewriting content.
-- Import limit: 128 MiB per file, 8 MiB per line, directory depth 20; symbolic links are not followed. Malformed/oversized lines are counted, and failed files are reported.
-- Unsupported record types, media, encrypted reasoning, token analytics and provider-specific UI events are not interpreted.
-- Search uses literal token matching, not semantic search; up to 80 session and 40 memory hits are returned. Skills and MCP configuration are reviewable in Agents but are not yet part of the FTS index.
-- Project discovery uses recorded paths and checks for `.git`; it does not crawl arbitrary repositories or infer frameworks.
-- Windows UNC/device paths are not probed or accepted as agent directories. Project paths remain visible as transcript data even when local Git detection is unavailable.
-- Session identity includes provider and source path. Copies moved to another source path appear as separate archived sessions.
-- Windows is the development target verified here. macOS/Linux packaging and signing still require platform validation.
+Paths are restricted to absolute local filesystem locations. Directory traversal, symlink traversal, malformed JSON/JSONL/TOML, oversized input, stale writes, suspicious marketplace files and invalid post-write configuration have regression coverage. Read [SECURITY.md](SECURITY.md) before reporting a vulnerability.
 
 ## Roadmap
 
-- **Phase 1:** harden Claude/Codex format coverage, large-history responsiveness and native integration tests.
-- **Phase 2:** local memories, compatible skills and reviewable MCP inspection (implemented); explicit copy/install and change previews are available.
-- **Phase 3:** structured cross-agent context export (implemented) and additional verified provider adapters.
-- **Phase 4:** community adapter SDK; evaluate optional encrypted device sync independently of the local core.
+- Broaden verified Claude and Codex record coverage.
+- Add stable session adapters for more agents when their local formats can be tested.
+- Improve native integration coverage on macOS and Linux.
+- Add optional encrypted local archives without changing the no-cloud default.
+- Publish a community adapter SDK after the normalization contract stabilizes.
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) and [SECURITY.md](SECURITY.md). Small, well-tested adapter improvements are especially welcome. Do not attach real private sessions to public issues.
+Read [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) and [SECURITY.md](SECURITY.md). Run `npm run check`, Rust tests, rustfmt and Clippy before opening a pull request.
 
-## Screenshots
+## FAQ
 
-The screenshot above is an actual browser preview of the empty workspace, not a mockup. Run `npm run dev` to inspect it safely without indexing your personal history. Desktop mode enables real local data access.
+**Does AgentHub send my history to Claude, OpenAI or another provider?**
+
+No. A context package leaves the app only when you explicitly copy or export it and then decide where to paste or save it.
+
+**Are Memories only reminders?**
+
+They are reusable local context: architecture decisions, conventions, constraints and preferences. They stay in AgentHub's local database until you explicitly select them for Context Export.
+
+**Why can an agent show “config found” but not “installed”?**
+
+Configuration and old session folders can survive an uninstall. The sidebar counts only a detected executable as installed.
+
+**Does Marketplace execute a downloaded script?**
+
+No. It lists executable-looking files as warnings and stores reviewed text only after confirmation.
+
+**Can AgentHub continue a session automatically?**
+
+It prepares a compact handoff package. It does not launch agents or submit prompts.
+
+## Known limitations
+
+- Indexing is manual and changed session files are reparsed as a unit.
+- Search is literal local full-text search, not semantic search.
+- Cursor, Gemini CLI, OpenCode and GitHub Copilot have installation/config detection only.
+- The local index and exported context files are not encrypted.
+- Release packages are unsigned; macOS and Linux artifacts are CI-built and are not run-tested on this Windows development host.
+- Provider file formats can change; unsupported records are skipped and reported rather than guessed.
+
+More screenshots are available in [docs/screenshots](docs/screenshots), and the latest verification record is in [docs/verification.md](docs/verification.md).
 
 ## License
 

@@ -31,7 +31,12 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: AgentHub ${{ github.ref_name }}
-          releaseBody: See the changelog and README for verified capabilities and platform limits.
-          releaseDraft: true
-          prerelease: true
+          releaseBody: |
+            AgentHub v0.1.1 adds an isolated populated demo, native Claude-to-Codex context handoffs, complete skill-package workflows, and safe MCP JSON/TOML management.
+
+            All history and memories stay local. AgentHub has no account, telemetry, cloud backend, automatic uploads, or automatic script/MCP execution.
+
+            See the README and changelog for verified behavior, platform limits, and installation instructions. Packages are currently unsigned.
+          releaseDraft: false
+          prerelease: false
           args: ${{ matrix.args }} --features desktop

@@ -4,6 +4,8 @@
 
 The implementation was scoped against the official [Claude Code session documentation](https://code.claude.com/docs/en/agent-sdk/sessions), the [Claude Code SDK message types](https://platform.claude.com/docs/en/agent-sdk/typescript), and the public [Codex protocol](https://github.com/openai/codex/blob/main/codex-rs/protocol/src/protocol.rs) / [response models](https://github.com/openai/codex/blob/main/codex-rs/protocol/src/models.rs). These are living sources, not a promise of a stable transcript schema. Test fixtures are synthetic minimal examples of the supported fields.
 
+AgentHub evaluates executable discovery, configuration-directory discovery and session-directory discovery independently. Only executable discovery marks an agent as installed in the sidebar. A surviving config or history folder is labelled as such and never promoted to an installation. Detection never starts an executable or contacts a provider.
+
 ## Claude Code
 
 Reads user and assistant records with `message.content`, optional `sessionId`, `cwd`, `timestamp`, `uuid`, and `message.model`. Supports plain text content and structured `text`, `tool_use`, and `tool_result` blocks. Tool results link through `tool_use_id`; `is_error` marks a recorded error. Repeated record UUID/block positions replace an earlier event, avoiding exact-record duplicates. Distinct partial records with different UUIDs are not merged by message ID.

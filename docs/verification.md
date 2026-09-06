@@ -1,25 +1,64 @@
-# Local verification record
+# Verification record — v0.1.1
 
-Development platform: Windows x64, Node 24.16.0, Rust 1.94.1, SQLite bundled through rusqlite. Dependency resolutions are recorded in both lockfiles.
+Development host: Windows x64, Node 24.16.0, Rust 1.94.1, bundled SQLite through rusqlite. Both dependency lockfiles are committed.
 
-Current result: **30 Rust tests and 17 frontend tests passed** on Windows; typecheck, ESLint, rustfmt and Clippy passed. Search-result navigation is tested for sessions outside the currently loaded page. Windows-only path tests reject UNC and device namespaces before filesystem probing.
+## Local quality gates
 
-Checks performed during development:
+- Frontend: **29/29 tests passed** across 6 test files.
+- Rust with the desktop feature: **34/34 tests passed**: 6 unit tests and 28 integration tests.
+- TypeScript strict typecheck, ESLint, Vite production build and `git diff --check` passed.
+- `cargo fmt --check` passed.
+- Clippy passed for all targets with the desktop feature and warnings denied.
+- Core optimized `cargo build --release --locked` passed.
+- Full `tauri build --features desktop` passed and produced the release executable plus MSI and NSIS bundles.
+- `npm audit` reported zero known vulnerabilities.
 
-- TypeScript strict typecheck, ESLint and production Vite build.
-- React behavior tests for the browser empty state, disabled local operations, accessible search shortcut, desktop session rendering, safe transcript text, indexing progress and settings IPC calls. Desktop IPC is mocked in these tests; they are not native end-to-end tests.
-- Rust integration tests for both adapters, malformed and oversized records, duplicate handling, idempotence, transaction rollback, literal full-text queries, filters, settings persistence, schema reopen and incremental indexing recovery.
-- Rust tests for memory revisions, trash/restore, atomic archives, context extraction, truthful analytics, read-only discovery and skill/MCP mutation workflows with backups.
-- Synthetic scale test for 10,000 sessions and 100,000 events: in-memory import completed in 0.83s and bounded FTS search in 0.19s on the development machine.
-- Frontend tests for memory editing, conflict preservation, archive export, context handoff, empty activity states and marketplace warning/metadata handling.
-- Rust formatting and Clippy with warnings denied, including the Tauri desktop feature.
-- Tauri Windows build with embedded frontend assets using `--debug --no-bundle`.
-- Optimized Windows executable built with `npm run desktop:build -- --no-bundle`. The delivered release-mode executable was launched with isolated storage, stayed responsive, reported its AgentHub window and created the database without a development server.
-- Full `npm run desktop` startup: native window responding and Vite HTTP 200. The Vite watcher excludes Rust build output to avoid Windows EBUSY errors; development CSP permits only the local development websocket in addition to IPC.
-- Native startup smoke check using `AGENTHUB_DATA_DIR` under an isolated scratch directory: the executable stayed running and responding, reported an AgentHub window, and created its SQLite database. No personal sessions were indexed for this check.
-- GitHub Actions release matrix for tag `v0.1.0`: Windows, macOS and Ubuntu jobs completed successfully and published seven platform release assets. The artifacts are unsigned.
-- Browser visual inspection of the overview and settings, and keyboard-opened search with focus on the search field. The README screenshot is from the actual empty browser preview.
+The test suites cover Claude/Codex parsing, malformed and oversized JSONL, duplicate records, incremental indexing, transaction rollback, literal FTS queries, filters, migrations, memory revisions/trash/import/export, bounded Git context, truthful analytics, skill package mutations, JSON/TOML MCP mutations, path traversal, marketplace warnings, stale hashes, secret masking and direct search navigation.
 
-The Windows sandbox prevented the build tools from reading ancestor directories and prevented native startup. The checks succeeded outside that sandbox. This was an execution-environment restriction, not a workaround added to application code.
+## Synthetic performance run
 
-Not verified here: signed release installers, every provider version, large personal archives, or full native UI end-to-end flows. The macOS/Linux packages are CI-built artifacts and were not launched on this Windows host.
+The in-memory scale fixture creates **10,000 sessions and 100,000 events** with no personal data:
+
+- Transactional import and FTS population: **884.449 ms**
+- Bounded FTS query: **181.174 ms**
+- Full test including verification: **1.19 s**
+
+Session and timeline APIs return bounded pages of 100 records/events.
+
+## Windows production artifacts
+
+| Artifact | Architecture | Size | SHA-256 |
+| --- | --- | ---: | --- |
+| `agenthub.exe` | x64 | 14,444,032 bytes | `8C4535F6EEB06E83683857735B6F9931174E92A4B2EC0ADACB88902869D876E4` |
+| `AgentHub_0.1.1_x64_en-US.msi` | x64 | 5,103,616 bytes | `7FCFFFF99D6979B668A9F8E5C0FC379280816A65CA3F3A9D0859B06890E407AC` |
+| `AgentHub_0.1.1_x64-setup.exe` | x64 | 3,540,220 bytes | `61554ABA1CCD64B6843407E500F57CC36DFD618C82C27EF1A4A6D7A1890BFFD2` |
+
+The embedded release executable reports product/file version 0.1.1. Packages are unsigned.
+
+## Native Windows smoke test
+
+The optimized embedded executable was launched without a development server using `AGENTHUB_DEMO=1` and the isolated root `C:\AgentHubSmokeV011`. The test did not scan normal agent folders.
+
+Verified in the real Tauri WebView:
+
+- first-run onboarding advanced through all four steps;
+- **Index my sessions** performed a real index request and reported 8 unchanged synthetic sessions;
+- dashboard showed 8 sessions, 3 projects, 38 events and 12 tool calls;
+- Ctrl+K searched for `timeout`, and selecting the result opened the exact recorded error session;
+- Memories showed three local notes and explicit **Use in context** actions;
+- Skills discovered four packages and exposed review/copy/duplicate/remove/export actions;
+- MCP discovered four individual servers and masked `DEMO_TOKEN`;
+- Claude Code session → Continue with another agent → OpenAI Codex built the context package;
+- native clipboard copy completed and changed the action to **Copied**.
+
+Dark theme, light theme and a 760×620 compact viewport were visually inspected. Every sidebar page and the principal dialogs were captured from the actual Tauri app with isolated synthetic data; see [gui-review.md](gui-review.md).
+
+## Repository scan
+
+Tracked and proposed release files were scanned for provider keys, GitHub tokens, private-key blocks, common personal home paths, the local username and common private email domains. No credential, personal transcript, database, log, backup or temporary file is included. The only generic `/home/` pattern is the intentionally synthetic demo layout assembled below its isolated demo root.
+
+All Markdown relative links resolve. Generated screenshots display only `C:\AgentHubDemoData`; they contain no real user session or personal path. The app contains no telemetry SDK, account flow, cloud backend, automatic upload, shell execution plugin or skill execution path.
+
+## CI and release artifacts
+
+The release tag workflow builds Windows, macOS and Linux packages through `tauri-apps/tauri-action`. Windows is run-tested locally. macOS and Linux bundles are build-verified by GitHub Actions and are not run-tested on this Windows host. Public workflow and asset results are recorded after tag publication.
