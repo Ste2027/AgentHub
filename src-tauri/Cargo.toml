@@ -1,6 +1,6 @@
 [package]
 name = "agenthub"
-version = "0.1.0"
+version = "0.1.1"
 description = "The local control center for your AI coding agents"
 edition = "2021"
 license = "MIT"
@@ -16,7 +16,7 @@ required-features = ["desktop"]
 
 [features]
 default = []
-desktop = ["dep:tauri", "dep:tauri-build", "dep:tauri-plugin-dialog"]
+desktop = ["dep:tauri", "dep:tauri-build", "dep:tauri-plugin-dialog", "dep:tauri-plugin-clipboard-manager"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -30,6 +30,7 @@ dirs = "6"
 uuid = { version = "1", features = ["v4"] }
 tempfile = "3"
 tauri-plugin-dialog = { version = "2", optional = true }
+tauri-plugin-clipboard-manager = { version = "2", optional = true }
 tauri = { version = "2", optional = true , features = [] }
 
 [build-dependencies]

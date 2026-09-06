@@ -249,9 +249,8 @@ export function App() {
     }
     if (hit.entity_type === "project" && hit.entity_id) {
       setSelected(null);
-      setProjectFilter(hit.entity_id);
-      setOffset(0);
-      setPage("sessions");
+      setResourceSelection({ ...hit });
+      setPage("projects");
       return;
     }
     if (hit.entity_type === "skill" || hit.entity_type === "mcp") {
@@ -349,7 +348,7 @@ export function App() {
             <ShieldCheck size={15} />
             <span>Local first. Always yours.</span>
           </div>
-          <span className="build-label">AgentHub / v0.1.0</span>
+          <span className="build-label">AgentHub / v0.1.1</span>
         </div>
       </aside>
       <main>
@@ -489,6 +488,7 @@ export function App() {
               {page === "projects" && (
                 <ProjectsPage
                   projects={projects}
+                  selection={resourceSelection}
                   setProjectFilter={setProjectFilter}
                   setOffset={setOffset}
                   setPage={setPage}

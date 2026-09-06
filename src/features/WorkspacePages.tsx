@@ -16,6 +16,7 @@ import type {
   Skill,
   McpServer,
   Analytics,
+  SearchHit,
 } from "@/lib/types";
 import { api, desktop } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -353,23 +354,33 @@ export function SessionsPage({
 }
 export function ProjectsPage({
   projects,
+  selection,
   setProjectFilter,
   setOffset,
   setPage,
   navigate,
 }: {
   projects: Project[];
+  selection?: SearchHit | null;
   setProjectFilter: (v: string) => void;
   setOffset: (v: number) => void;
   setPage: (p: Page) => void;
   navigate: (p: Page) => void;
 }) {
+  useEffect(() => {
+    if (selection?.entity_type !== "project" || !selection.entity_id) return;
+    const target = [
+      ...document.querySelectorAll<HTMLElement>("[data-project-path]"),
+    ].find((node) => node.dataset.projectPath === selection.entity_id);
+    target?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  }, [selection]);
   return projects.length ? (
     <div className="project-grid">
       {projects.map((p) => (
         <article
           key={p.path}
-          className="panel project-card project-detail-card"
+          data-project-path={p.path}
+          className={`panel project-card project-detail-card ${selection?.entity_type === "project" && selection.entity_id === p.path ? "search-target" : ""}`}
         >
           <header>
             <FolderGit2 size={23} />

@@ -123,6 +123,23 @@ describe("Desktop UI contract", () => {
       sessionId: "older-session",
     });
   });
+  it("opens a project search result on the matching project card", async () => {
+    const { container } = render(<App />);
+    await screen.findByText("Repair synthetic login flow");
+    fireEvent.keyDown(window, { key: "k", ctrlKey: true });
+    fireEvent.change(
+      screen.getByRole("textbox", { name: "Search all sessions" }),
+      { target: { value: "synthetic/project" } },
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: /project.*synthetic\/project/i }),
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Projects" }),
+    ).toBeInTheDocument();
+    expect(container.querySelector("[data-project-path].search-target"))
+      .toHaveAttribute("data-project-path", fixture.project);
+  });
   it("opens an indexed session and renders transcript markup as inert text", async () => {
     const { container } = render(<App />);
     fireEvent.click(

@@ -52,6 +52,7 @@ async fn save_settings(state: State<'_, AppState>, settings: Settings) -> Result
     with_db(&state, move |db| db.save_settings(&settings)).await
 }
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 async fn list_sessions(
     state: State<'_, AppState>,
     agent: String,
@@ -115,6 +116,7 @@ async fn index_sessions(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .setup(|app| {
             let demo = matches!(
                 std::env::var("AGENTHUB_DEMO").ok().as_deref(),

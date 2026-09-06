@@ -948,6 +948,10 @@ select {
 .project-card:hover {
   background: var(--hover);
 }
+.search-target {
+  border-color: color-mix(in srgb, var(--accent) 72%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+}
 .project-card > svg {
   color: var(--accent);
   margin-bottom: 17px;
@@ -1198,11 +1202,15 @@ select {
   color: var(--muted);
 }
 .action-dialog > footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
   display: flex;
   justify-content: flex-end;
   gap: 9px;
   padding: 17px 26px 22px;
   border-top: 1px solid var(--border);
+  background: var(--panel);
 }
 .danger-action {
   color: #190b09 !important;

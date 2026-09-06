@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Download, Copy } from "lucide-react";
-import { api } from "@/lib/api";
+import { api, desktop } from "@/lib/api";
 import { saveText } from "@/lib/files";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { formatContext } from "@/lib/context";
 import { errorMessage } from "@/lib/utils";
 import type { Memory, SessionContext } from "@/lib/types";
@@ -131,18 +132,36 @@ export function ContextExport({
     setContext((c) => (c ? { ...c, [key]: value } : c));
   async function copyContext() {
     if (!context) return;
+    const text = formatContext(
+      context,
+      target,
+      memories.filter((m) => selectedMemoryIds.includes(m.id)),
+    );
     try {
-      await navigator.clipboard.writeText(
-        formatContext(
-          context,
-          target,
-          memories.filter((m) => selectedMemoryIds.includes(m.id)),
-        ),
-      );
+      if (desktop) await writeText(text);
+      else if (navigator.clipboard?.writeText)
+        await navigator.clipboard.writeText(text);
+      else throw new Error("Clipboard API unavailable");
       setCopied(true);
       setNotice("Context copied to the clipboard.");
-    } catch {
-      setError("Clipboard access was unavailable. Use Export context instead.");
+    } catch (clipboardError) {
+      const fallback = document.createElement("textarea");
+      fallback.value = text;
+      fallback.setAttribute("readonly", "");
+      fallback.style.position = "fixed";
+      fallback.style.opacity = "0";
+      document.body.append(fallback);
+      fallback.select();
+      const copiedWithFallback = document.execCommand?.("copy") === true;
+      fallback.remove();
+      if (copiedWithFallback) {
+        setCopied(true);
+        setNotice("Context copied to the clipboard.");
+      } else {
+        setError(
+          `Clipboard access was unavailable (${errorMessage(clipboardError)}). Use Export context instead.`,
+        );
+      }
     }
   }
   return (

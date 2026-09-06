@@ -138,6 +138,8 @@ impl Database {
         tx.execute("DELETE FROM projects WHERE NOT EXISTS (SELECT 1 FROM sessions WHERE sessions.project=projects.path)",[]).map_err(|e|e.to_string())?;
         tx.commit().map_err(|e| e.to_string())
     }
+    // Keep the filter fields explicit so SQL parameter order stays reviewable.
+    #[allow(clippy::too_many_arguments)]
     pub fn sessions(
         &self,
         agent: &str,
