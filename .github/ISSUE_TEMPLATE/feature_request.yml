@@ -1,7 +1,32 @@
 name: Feature request
-description: Suggest an improvement
+description: Propose an improvement to an existing ContextMeld workflow
+title: "[Feature]: "
+labels:
+  - enhancement
 body:
   - type: textarea
-    id: idea
-    attributes: { label: Proposal, description: Explain the local-first workflow it enables. }
-    validations: { required: true }
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Describe the workflow problem and who encounters it.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Explain what a successful result would let you do.
+    validations:
+      required: true
+  - type: textarea
+    id: current-workaround
+    attributes:
+      label: Current workaround
+      description: Tell us how you handle this today, if applicable.
+  - type: checkboxes
+    id: local-first
+    attributes:
+      label: Local-first expectations
+      options:
+        - label: This request can preserve explicit actions, local storage and no telemetry by default.
+          required: true

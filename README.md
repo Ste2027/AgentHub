@@ -6,6 +6,8 @@ Claude Code · OpenAI Codex · More adapters coming
 
 [Download ContextMeld v0.2.0](https://github.com/Ste2027/ContextMeld/releases/tag/v0.2.0) · MIT · Tauri + Rust + React · No telemetry
 
+[![Quality](https://github.com/Ste2027/ContextMeld/actions/workflows/quality.yml/badge.svg)](https://github.com/Ste2027/ContextMeld/actions/workflows/quality.yml) [![Latest release](https://img.shields.io/github/v/release/Ste2027/ContextMeld)](https://github.com/Ste2027/ContextMeld/releases/latest) [![License: MIT](https://img.shields.io/badge/license-MIT-b8ca91.svg)](LICENSE)
+
 ![ContextMeld desktop tour](docs/demo/contextmeld-tour.gif)
 
 ContextMeld indexes the coding-agent history already on your machine. Browse sessions, search across projects, preserve useful memories, review skills and MCP configuration, then carry a compact context package from Claude Code to Codex or back again.
@@ -142,6 +144,8 @@ Paths are restricted to absolute local filesystem locations. Directory traversal
 ## Contributing
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) and [SECURITY.md](SECURITY.md). Run `npm run check`, Rust tests, rustfmt and Clippy before opening a pull request.
+
+If ContextMeld is useful to you, starring the repository helps other coding-agent users find it. Concrete reports are even more valuable: use the guided issue forms for a [bug](https://github.com/Ste2027/ContextMeld/issues/new?template=bug_report.yml), [workflow improvement](https://github.com/Ste2027/ContextMeld/issues/new?template=feature_request.yml) or [agent adapter](https://github.com/Ste2027/ContextMeld/issues/new?template=adapter_request.yml).
 
 ## FAQ
 

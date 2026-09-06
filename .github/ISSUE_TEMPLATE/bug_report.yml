@@ -1,11 +1,62 @@
 name: Bug report
-description: Report a reproducible problem
+description: Report reproducible incorrect behavior in ContextMeld
+title: "[Bug]: "
+labels:
+  - bug
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve ContextMeld. Do not attach real transcripts, credentials, tokens or personal paths. Use minimized synthetic data when a record is needed.
+  - type: input
+    id: version
+    attributes:
+      label: ContextMeld version
+      placeholder: v0.2.0
+    validations:
+      required: true
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+    validations:
+      required: true
   - type: textarea
-    id: reproduce
-    attributes: { label: Reproduction steps, description: Include synthetic paths and data only. }
-    validations: { required: true }
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Give the smallest sequence that consistently triggers the problem.
+      placeholder: |
+        1. Open …
+        2. Select …
+        3. Observe …
+    validations:
+      required: true
   - type: textarea
     id: expected
-    attributes: { label: Expected and actual behavior }
-    validations: { required: true }
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: safe-context
+    attributes:
+      label: Additional non-sensitive context
+      description: Add screenshots or minimized synthetic records only after removing names, paths, secrets and transcript content.
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: I removed personal paths, transcripts, credentials, tokens and other private data.
+          required: true

@@ -1,0 +1,54 @@
+name: Agent adapter request
+description: Request support for a coding agent's stable local session format
+title: "[Adapter]: "
+labels:
+  - adapter
+  - enhancement
+body:
+  - type: input
+    id: agent
+    attributes:
+      label: Agent and version
+      placeholder: Agent name and exact version
+    validations:
+      required: true
+  - type: dropdown
+    id: operating-system
+    attributes:
+      label: Operating system
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Multiple
+    validations:
+      required: true
+  - type: textarea
+    id: format-reference
+    attributes:
+      label: Authoritative format reference
+      description: Link to official documentation or source code that defines the local session format.
+    validations:
+      required: true
+  - type: textarea
+    id: locations
+    attributes:
+      label: Standard local locations
+      description: List documented path patterns using environment variables or home-relative notation. Do not paste your personal absolute path.
+      placeholder: ~/.example/sessions/**/*.jsonl
+    validations:
+      required: true
+  - type: textarea
+    id: capabilities
+    attributes:
+      label: Requested capabilities
+      description: Specify sessions, skills, MCP or another stable local capability.
+    validations:
+      required: true
+  - type: checkboxes
+    id: fixtures
+    attributes:
+      label: Safe test data
+      options:
+        - label: I understand that real transcripts and credentials must not be submitted; fixtures must be synthetic and minimized.
+          required: true
