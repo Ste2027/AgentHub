@@ -136,7 +136,7 @@ export async function inspectMarketplaceSkill(
         )
       )
         throw Error(
-          `${path} is binary; AgentHub skill archives accept UTF-8 text only.`,
+          `${path} is binary; ContextMeld skill archives accept UTF-8 text only.`,
         );
       if (!entry.download_url)
         throw Error(`${path} has no downloadable content.`);
@@ -216,7 +216,7 @@ export async function inspectMarketplaceSkill(
     );
   const archive = JSON.stringify(
     {
-      format: "agenthub.skill",
+      format: "contextmeld.skill",
       version: 1,
       name: item.name,
       files: files.map(({ path, text }) => ({ path, text })),

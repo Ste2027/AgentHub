@@ -38,7 +38,7 @@ export function formatContext(
     (memories.length
       ? "\n" +
         block(
-          "Selected AgentHub memories — review before using",
+          "Selected ContextMeld memories — review before using",
           memories.map((m) => `### ${m.title}\n${m.body}`).join("\n\n"),
         )
       : "") +

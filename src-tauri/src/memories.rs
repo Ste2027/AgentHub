@@ -241,7 +241,7 @@ impl Database {
             });
         }
         let json = serde_json::to_string_pretty(&MemoryArchive {
-            format: "agenthub.memories".into(),
+            format: "contextmeld.memories".into(),
             version: 1,
             memories,
         })
@@ -257,7 +257,11 @@ impl Database {
         }
         let archive: MemoryArchive =
             serde_json::from_str(json).map_err(|e| format!("Invalid memory archive: {e}"))?;
-        if archive.format != "agenthub.memories" || archive.version != 1 {
+        if !matches!(
+            archive.format.as_str(),
+            "contextmeld.memories" | "agenthub.memories"
+        ) || archive.version != 1
+        {
             return Err("Unsupported memory archive format/version".into());
         }
         if archive.memories.len() > 500 {

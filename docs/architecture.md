@@ -20,11 +20,13 @@ On Windows, UNC and device namespaces are rejected before agent-directory detect
 
 The indexer visits only supported provider roots. It does not follow symbolic links. File-size and modification-time fingerprints avoid reparsing unchanged files. It checks metadata before and after parsing; files changed during the read are retried on a later scan. A full rebuild bypasses the fingerprint check. Current limits bound file, line and traversal sizes.
 
+With the desktop feature enabled, [`notify::RecommendedWatcher`](https://docs.rs/notify/latest/notify/type.RecommendedWatcher.html) selects the operating system's native filesystem backend. Only detected, supported Claude Code and OpenAI Codex session roots are registered recursively. Access-only events and non-JSONL paths are discarded, changed paths are capped and rapid writes are grouped with a 900 ms debounce. The incremental entry point canonicalizes both roots and files before parsing, so an event outside a configured root cannot enter the index. Reconfiguring or disabling the watcher invalidates its previous worker generation.
+
 Import diagnostics are bounded to 50 file issue messages per run, with full counts retained. Per-session malformed-line counts persist in SQLite. Source removal is archival: it does not purge cached sessions automatically.
 
 ## Deliberate MVP tradeoffs
 
-- Manual scans avoid hidden background work and complicated filesystem watcher semantics.
+- One native watcher follows only the supported session roots. A visible status and manual scan remain available because operating-system events are not a durable queue.
 - One connection makes import atomicity straightforward; concurrent read connections and per-file lock scope are planned for larger archives.
 - Ordered events represent messages, calls, results and errors without copying the same payload into many tables.
 - Pagination limits IPC payloads to 100 events or sessions per request. Individual large events can still be expensive to render; the UI initially truncates text with an explicit expand action.

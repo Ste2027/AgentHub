@@ -11,12 +11,12 @@ export function Onboarding({
   const [step, setStep] = useState(0);
   const steps = [
     [
-      "Welcome to AgentHub",
+      "Welcome to ContextMeld",
       "One local workspace for the coding-agent history you already have.",
     ],
     [
       "Everything stays here",
-      "AgentHub reads local files only. It does not upload transcripts, run agents or collect telemetry.",
+      "ContextMeld reads local files only. It does not upload transcripts, run agents or collect telemetry.",
     ],
     [
       "Detect your agents",
@@ -28,7 +28,7 @@ export function Onboarding({
     ],
   ];
   const finish = () => {
-    localStorage.setItem("agenthub.onboarding.v1", "done");
+    localStorage.setItem("contextmeld.onboarding.v1", "done");
     onDone();
   };
   const finishAndIndex = () => {

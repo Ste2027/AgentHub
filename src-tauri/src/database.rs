@@ -23,7 +23,7 @@ impl Database {
             .query_row("PRAGMA user_version", [], |r| r.get(0))
             .map_err(|e| e.to_string())?;
         if version > 2 {
-            return Err("Database is from a newer AgentHub version".into());
+            return Err("Database is from a newer ContextMeld version".into());
         }
         if version == 0 {
             let tx = self.conn.transaction().map_err(|e| e.to_string())?;

@@ -326,6 +326,22 @@ main {
 .private-pill {
   font-size: 10px;
 }
+.topbar-statuses,
+.watch-pill {
+  display: flex;
+  align-items: center;
+}
+.topbar-statuses {
+  gap: 16px;
+}
+.watch-pill {
+  gap: 7px;
+  color: var(--muted-strong);
+  font-size: 10px;
+}
+.watch-pill svg {
+  color: var(--accent);
+}
 .content {
   padding: 37px 38px 25px;
   max-width: 1500px;
@@ -1217,8 +1233,12 @@ select {
   background: #dc806c !important;
 }
 @media (max-width: 620px) {
-  .action-dialog-backdrop { padding: 10px; }
-  .action-dialog-summary { grid-template-columns: 1fr; }
+  .action-dialog-backdrop {
+    padding: 10px;
+  }
+  .action-dialog-summary {
+    grid-template-columns: 1fr;
+  }
 }
 .roadmap-note {
   padding: 23px;
@@ -1261,6 +1281,38 @@ select {
 }
 .checkbox input {
   accent-color: var(--accent);
+}
+.watcher-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 14px;
+  margin: -8px 0 20px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+}
+.watcher-status .status-dot {
+  margin-top: 5px;
+  flex: 0 0 auto;
+}
+.watcher-status strong,
+.watcher-status small {
+  display: block;
+}
+.watcher-status strong {
+  font-size: 11px;
+  font-weight: 500;
+}
+.watcher-status small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+  margin-top: 4px;
+}
+.watcher-warning {
+  color: #d7a85e !important;
+  margin: -10px 0 18px !important;
 }
 .privacy > svg {
   color: var(--accent);
@@ -1573,6 +1625,12 @@ select {
     padding: 0 20px;
   }
   .private-pill {
+    font-size: 0;
+  }
+  .topbar-statuses {
+    gap: 11px;
+  }
+  .watch-pill {
     font-size: 0;
   }
   .content {

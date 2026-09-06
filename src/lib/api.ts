@@ -10,6 +10,7 @@ import type {
 import type { Memory, MemoryDraft, MemoryPage, ImportResult } from "./types";
 import type {
   IndexProgress,
+  AutoIndexStatus,
   Overview,
   Project,
   SearchHit,
@@ -119,4 +120,5 @@ export const api = {
   projects: () => call<Project[]>("list_projects"),
   search: (query: string) => call<SearchHit[]>("search", { query }),
   index: (force = false) => call<IndexProgress>("index_sessions", { force }),
+  autoIndexStatus: () => call<AutoIndexStatus>("auto_index_status"),
 };

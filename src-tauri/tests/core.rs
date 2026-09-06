@@ -1,4 +1,4 @@
-use agenthub_core::{adapters, database::Database, indexer, models::Settings};
+use contextmeld_core::{adapters, database::Database, indexer, models::Settings};
 use std::{io::Cursor, path::Path};
 const CLAUDE: &str = r#"{"type":"user","uuid":"u1","sessionId":"c1","cwd":"/projects/alpha","timestamp":"2026-09-01T10:00:00Z","message":{"role":"user","content":"Fix authentication bug"}}
 {"type":"assistant","uuid":"a1","sessionId":"c1","timestamp":"2026-09-01T10:01:00Z","message":{"model":"claude-test","content":[{"type":"text","text":"Checking login"},{"type":"tool_use","id":"t1","name":"Bash","input":{"command":"npm test"}}]}}
@@ -11,7 +11,7 @@ const CODEX: &str = r#"{"type":"session_meta","timestamp":"2026-09-01T10:00:00Z"
 {"type":"response_item","payload":{"type":"function_call","name":"exec_command","call_id":"t1","arguments":"{\"cmd\":\"npm test\"}"}}
 {"type":"response_item","payload":{"type":"function_call_output","call_id":"t1","output":"All tests passed"}}
 "#;
-fn parse(agent: &str, text: &str) -> agenthub_core::models::ParsedSession {
+fn parse(agent: &str, text: &str) -> contextmeld_core::models::ParsedSession {
     adapters::adapter(agent)
         .unwrap()
         .parse(&mut Cursor::new(text), Path::new("/test/session.jsonl"))
@@ -24,15 +24,15 @@ fn db() -> Database {
 fn git_discovery_accepts_local_projects_and_rejects_relative_paths() {
     let temp = tempfile::tempdir().unwrap();
     std::fs::create_dir(temp.path().join(".git")).unwrap();
-    assert!(agenthub_core::paths::has_local_git_marker(temp.path()));
-    assert!(!agenthub_core::paths::has_local_git_marker(Path::new(
+    assert!(contextmeld_core::paths::has_local_git_marker(temp.path()));
+    assert!(!contextmeld_core::paths::has_local_git_marker(Path::new(
         "relative"
     )));
 }
 #[cfg(windows)]
 #[test]
 fn windows_network_and_device_paths_are_not_probed() {
-    use agenthub_core::paths::{has_local_git_marker, is_local_absolute};
+    use contextmeld_core::paths::{has_local_git_marker, is_local_absolute};
     for path in [
         r"\\untrusted.invalid\share",
         r"\\?\UNC\untrusted.invalid\share",
@@ -190,6 +190,7 @@ fn settings_persist_and_migrations_reopen() {
         claude_path: temp.path().to_string_lossy().into_owned(),
         codex_path: String::new(),
         light_mode: true,
+        auto_index: true,
     };
     d.save_settings(&s).unwrap();
     drop(d);
@@ -211,6 +212,7 @@ fn indexer_skips_unchanged_and_recovers_corrupt_files() {
         claude_path: source.to_string_lossy().into_owned(),
         codex_path: temp.path().join("absent").to_string_lossy().into_owned(),
         light_mode: false,
+        auto_index: true,
     })
     .unwrap();
     let first = indexer::run(&mut d, false, |_| {}).unwrap();
@@ -226,6 +228,40 @@ fn indexer_skips_unchanged_and_recovers_corrupt_files() {
     );
     let forced = indexer::run(&mut d, true, |_| {}).unwrap();
     assert_eq!(forced.indexed, 2);
+}
+#[test]
+fn incremental_indexer_reads_only_changed_files_inside_agent_roots() {
+    let temp = tempfile::tempdir().unwrap();
+    let source = temp.path().join("claude");
+    let outside = temp.path().join("outside");
+    std::fs::create_dir_all(&source).unwrap();
+    std::fs::create_dir_all(&outside).unwrap();
+    let watched = source.join("changed.jsonl");
+    let ignored = outside.join("ignored.jsonl");
+    std::fs::write(&watched, CLAUDE).unwrap();
+    std::fs::write(&ignored, CLAUDE).unwrap();
+    let settings = Settings {
+        claude_path: source.to_string_lossy().into_owned(),
+        codex_path: temp.path().join("absent").to_string_lossy().into_owned(),
+        ..Settings::default()
+    };
+    let mut d = db();
+    d.save_settings(&settings).unwrap();
+    let first = indexer::run_paths(
+        &mut d,
+        adapters::agents(&settings),
+        vec![watched.clone(), ignored],
+        |_| {},
+    )
+    .unwrap();
+    assert_eq!((first.scanned, first.indexed, first.failed), (1, 1, 0));
+    assert_eq!(
+        d.sessions("", "", "", "", "", "newest", 0).unwrap().len(),
+        1
+    );
+    let next =
+        indexer::run_paths(&mut d, adapters::agents(&settings), vec![watched], |_| {}).unwrap();
+    assert_eq!((next.scanned, next.indexed, next.skipped), (1, 0, 1));
 }
 #[test]
 fn oversized_line_is_skipped_and_next_record_survives() {

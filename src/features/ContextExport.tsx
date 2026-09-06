@@ -100,7 +100,7 @@ export function ContextExport({
           format === "json"
             ? JSON.stringify(
                 {
-                  format: "agenthub.context",
+                  format: "contextmeld.context",
                   version: 1,
                   target_agent: target,
                   context,
@@ -116,7 +116,9 @@ export function ContextExport({
                 target,
                 memories.filter((m) => selectedMemoryIds.includes(m.id)),
               ),
-          format === "json" ? "agenthub-context.json" : "agenthub-context.md",
+          format === "json"
+            ? "contextmeld-context.json"
+            : "contextmeld-context.md",
         )
       )
         setNotice(
@@ -171,8 +173,8 @@ export function ContextExport({
       </Button>
       <h2>Continue with another agent</h2>
       <p className="field-note">
-        Review and edit this compact context, then export it. AgentHub does not
-        send data to an agent or execute the recorded commands.
+        Review and edit this compact context, then export it. ContextMeld does
+        not send data to an agent or execute the recorded commands.
       </p>
       {error && (
         <p className="error" role="alert">

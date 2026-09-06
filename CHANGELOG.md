@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 — 2026-09-06
+
+- Renamed the product and repository from AgentHub to ContextMeld after a category collision review.
+- Added native automatic indexing for supported Claude Code and OpenAI Codex session folders.
+- Added debounced, bounded processing of changed JSONL files without polling or full-directory rescans.
+- Added watcher state to the top bar and Settings, with a manual-index fallback and a user-controlled off switch.
+- Preserved the v0.1.x database location, application identifier, environment variables, local preferences and import formats.
+- Added native watcher, incremental-indexing and UI regression coverage.
+
 ## 0.1.1 — 2026-09-06
 
 - Added an isolated synthetic demo workspace and real populated product visuals.

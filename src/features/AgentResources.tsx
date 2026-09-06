@@ -109,7 +109,7 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
   async function exportSkill(path: string, name: string) {
     try {
       const archive = await api.exportSkill(path);
-      await saveText(archive, `${name}.agenthub-skill.json`);
+      await saveText(archive, `${name}.contextmeld-skill.json`);
     } catch {
       setError("Could not export this skill.");
     }
@@ -137,7 +137,7 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
           <h2>Skills</h2>
           <p className="muted">
             Local SKILL.md folders discovered for Claude Code and Codex. Review
-            files and explicitly apply changes. AgentHub never runs skills.
+            files and explicitly apply changes. ContextMeld never runs skills.
           </p>
         </div>
         <span className="badge">{items.length} discovered</span>
@@ -181,11 +181,11 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
                 files?: { path: string }[];
               };
               if (
-                archive.format !== "agenthub.skill" ||
+                archive.format !== "contextmeld.skill" ||
                 !archive.name ||
                 !Array.isArray(archive.files)
               )
-                throw Error("This is not an AgentHub skill archive.");
+                throw Error("This is not an ContextMeld skill archive.");
               const destination = window.prompt(
                 "Absolute destination skills directory:",
               );
@@ -212,7 +212,7 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
           variant="ghost"
           onClick={async () => {
             const backup = window.prompt(
-              "Absolute path to an AgentHub skill backup:",
+              "Absolute path to an ContextMeld skill backup:",
             );
             const target =
               backup &&
@@ -250,7 +250,7 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
       )}
       {deletedSkill && (
         <div className="notice resource-rollback">
-          <span>{deletedSkill.name} is in AgentHub trash.</span>
+          <span>{deletedSkill.name} is in ContextMeld trash.</span>
           <Button
             variant="outline"
             size="sm"
@@ -327,10 +327,13 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
                   size="sm"
                   onClick={async () => {
                     try {
-                      const archive = JSON.parse(await api.exportSkill(s.path)) as {
+                      const archive = JSON.parse(
+                        await api.exportSkill(s.path),
+                      ) as {
                         files: { path: string }[];
                       };
-                      const targetAgent = s.agent === "claude" ? "codex" : "claude";
+                      const targetAgent =
+                        s.agent === "claude" ? "codex" : "claude";
                       setSkillAction({
                         kind: "copy",
                         skill: s,
@@ -340,7 +343,11 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
                         newName: `${s.name}-copy`,
                       });
                     } catch (e) {
-                      setError(e instanceof Error ? e.message : "Could not inspect this skill.");
+                      setError(
+                        e instanceof Error
+                          ? e.message
+                          : "Could not inspect this skill.",
+                      );
                     }
                   }}
                 >
@@ -505,7 +512,7 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
               ? "Review the complete package and target before creating files for another agent. No content is transformed or executed."
               : skillAction.kind === "duplicate"
                 ? "Create a complete sibling copy. Existing folders are never overwritten."
-                : "The complete folder will move to AgentHub trash and can be restored."
+                : "The complete folder will move to ContextMeld trash and can be restored."
           }
           confirmLabel={
             skillAction.kind === "copy"
@@ -523,12 +530,24 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
             try {
               if (skillAction.kind === "copy") {
                 if (!skillAction.destination.trim())
-                  throw Error("Choose an absolute local destination directory.");
-                await api.copySkill(skillAction.skill.path, skillAction.destination.trim());
-                setNotice(`${skillAction.skill.name} copied for ${skillAction.targetAgent === "claude" ? "Claude Code" : "OpenAI Codex"}.`);
+                  throw Error(
+                    "Choose an absolute local destination directory.",
+                  );
+                await api.copySkill(
+                  skillAction.skill.path,
+                  skillAction.destination.trim(),
+                );
+                setNotice(
+                  `${skillAction.skill.name} copied for ${skillAction.targetAgent === "claude" ? "Claude Code" : "OpenAI Codex"}.`,
+                );
               } else if (skillAction.kind === "duplicate") {
-                await api.duplicateSkill(skillAction.skill.path, skillAction.newName.trim());
-                setNotice(`${skillAction.skill.name} duplicated as ${skillAction.newName.trim()}.`);
+                await api.duplicateSkill(
+                  skillAction.skill.path,
+                  skillAction.newName.trim(),
+                );
+                setNotice(
+                  `${skillAction.skill.name} duplicated as ${skillAction.newName.trim()}.`,
+                );
               } else {
                 const trash = await api.deleteSkill(skillAction.skill.path);
                 setDeletedSkill({ name: skillAction.skill.name, trash });
@@ -536,7 +555,11 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
               setSkillAction(null);
               await reloadSkills();
             } catch (e) {
-              setError(e instanceof Error ? e.message : "Could not apply this skill change.");
+              setError(
+                e instanceof Error
+                  ? e.message
+                  : "Could not apply this skill change.",
+              );
             } finally {
               setActionBusy(false);
             }
@@ -545,20 +568,30 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
           {skillAction.kind === "copy" && (
             <>
               <div className="action-dialog-summary">
-                <span><strong>{skillAction.files.length}</strong>Files</span>
-                <span><strong>{skillAction.skill.agent}</strong>Source agent</span>
-                <span><strong>No scripts</strong>will be run</span>
+                <span>
+                  <strong>{skillAction.files.length}</strong>Files
+                </span>
+                <span>
+                  <strong>{skillAction.skill.agent}</strong>Source agent
+                </span>
+                <span>
+                  <strong>No scripts</strong>will be run
+                </span>
               </div>
               <label>
                 Target agent
                 <select
                   value={skillAction.targetAgent}
                   onChange={(event) => {
-                    const targetAgent = event.target.value as "claude" | "codex";
+                    const targetAgent = event.target.value as
+                      "claude" | "codex";
                     setSkillAction({
                       ...skillAction,
                       targetAgent,
-                      destination: destinationForAgent(skillAction.skill.path, targetAgent),
+                      destination: destinationForAgent(
+                        skillAction.skill.path,
+                        targetAgent,
+                      ),
                     });
                   }}
                 >
@@ -571,7 +604,12 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
                 <input
                   aria-label="Skill copy destination"
                   value={skillAction.destination}
-                  onChange={(event) => setSkillAction({ ...skillAction, destination: event.target.value })}
+                  onChange={(event) =>
+                    setSkillAction({
+                      ...skillAction,
+                      destination: event.target.value,
+                    })
+                  }
                 />
               </label>
             </>
@@ -582,18 +620,25 @@ export function SkillsPage({ selection }: { selection?: SearchHit | null }) {
               <input
                 aria-label="Duplicate skill name"
                 value={skillAction.newName}
-                onChange={(event) => setSkillAction({ ...skillAction, newName: event.target.value })}
+                onChange={(event) =>
+                  setSkillAction({
+                    ...skillAction,
+                    newName: event.target.value,
+                  })
+                }
               />
             </label>
           )}
           <div className="action-dialog-files">
             <strong>Exact file set</strong>
-            {skillAction.files.map((file) => <code key={file}>{file}</code>)}
+            {skillAction.files.map((file) => (
+              <code key={file}>{file}</code>
+            ))}
           </div>
           <p className="notice">
             {skillAction.kind === "remove"
               ? "This is reversible from the Skills page until the trash entry is replaced."
-              : "AgentHub validates every path and refuses conflicts before writing."}
+              : "ContextMeld validates every path and refuses conflicts before writing."}
           </p>
         </ActionDialog>
       )}
@@ -675,7 +720,8 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
     }
   }
   function rememberBackup(path: string, backup: string) {
-    if (backup.includes(".agenthub-backup-")) setLastChange({ path, backup });
+    if (backup.includes(".contextmeld-backup-"))
+      setLastChange({ path, backup });
   }
   if (!desktop)
     return (
@@ -693,8 +739,8 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
           <h2>MCP servers</h2>
           <p className="muted">
             Review Claude and Codex configuration and explicitly edit supported
-            formats. AgentHub never starts a server or connects to it. Sensitive
-            values stay masked until you explicitly open the editor.
+            formats. ContextMeld never starts a server or connects to it.
+            Sensitive values stay masked until you explicitly open the editor.
           </p>
         </div>
         <span className="badge">{items.length} discovered</span>
@@ -1040,7 +1086,7 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
                     ? `${mcpAction.server?.enabled ? "Disable" : "Enable"} ${mcpAction.name}`
                     : `Remove ${mcpAction.name}`
           }
-          description="Review the exact target and change. AgentHub creates a backup, writes atomically, parses the result again and rolls back automatically if validation fails."
+          description="Review the exact target and change. ContextMeld creates a backup, writes atomically, parses the result again and rolls back automatically if validation fails."
           confirmLabel={
             mcpAction.kind === "add"
               ? "Add server"
@@ -1064,17 +1110,23 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
               let backup: string;
               if (mcpAction.kind === "copy") {
                 if (!mcpAction.destination.trim())
-                  throw Error("Choose an absolute JSON or TOML destination path.");
+                  throw Error(
+                    "Choose an absolute JSON or TOML destination path.",
+                  );
                 backup = await api.copyMcpServer(
                   mcpAction.path,
                   mcpAction.name,
                   mcpAction.destination.trim(),
                 );
                 rememberBackup(mcpAction.destination.trim(), backup);
-                setNotice(`${mcpAction.name} copied. Reopen the target agent to load it.`);
+                setNotice(
+                  `${mcpAction.name} copied. Reopen the target agent to load it.`,
+                );
               } else {
                 if (!mcpAction.path.trim())
-                  throw Error("Choose an absolute JSON or TOML configuration path.");
+                  throw Error(
+                    "Choose an absolute JSON or TOML configuration path.",
+                  );
                 const file = await api.mcpConfig(mcpAction.path);
                 if (mcpAction.kind === "add") {
                   backup = await api.addMcpServer(
@@ -1091,7 +1143,9 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
                     mcpAction.newName.trim(),
                     file.hash,
                   );
-                  setNotice(`${mcpAction.name} duplicated as ${mcpAction.newName.trim()}.`);
+                  setNotice(
+                    `${mcpAction.name} duplicated as ${mcpAction.newName.trim()}.`,
+                  );
                 } else if (mcpAction.kind === "toggle") {
                   backup = await api.setMcpEnabled(
                     mcpAction.path,
@@ -1099,21 +1153,29 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
                     !mcpAction.server!.enabled,
                     file.hash,
                   );
-                  setNotice(`${mcpAction.name} ${mcpAction.server!.enabled ? "disabled" : "enabled"}.`);
+                  setNotice(
+                    `${mcpAction.name} ${mcpAction.server!.enabled ? "disabled" : "enabled"}.`,
+                  );
                 } else {
                   backup = await api.removeMcpServer(
                     mcpAction.path,
                     mcpAction.name,
                     file.hash,
                   );
-                  setNotice(`${mcpAction.name} removed. The change can be rolled back.`);
+                  setNotice(
+                    `${mcpAction.name} removed. The change can be rolled back.`,
+                  );
                 }
                 rememberBackup(mcpAction.path, backup);
               }
               setMcpAction(null);
               await reloadMcp();
             } catch (e) {
-              setError(e instanceof Error ? e.message : "Could not apply this MCP change.");
+              setError(
+                e instanceof Error
+                  ? e.message
+                  : "Could not apply this MCP change.",
+              );
             } finally {
               setActionBusy(false);
             }
@@ -1127,7 +1189,9 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
                   aria-label="MCP configuration path"
                   placeholder="Absolute .json or .toml path"
                   value={mcpAction.path}
-                  onChange={(event) => setMcpAction({ ...mcpAction, path: event.target.value })}
+                  onChange={(event) =>
+                    setMcpAction({ ...mcpAction, path: event.target.value })
+                  }
                 />
               </label>
               <label>
@@ -1135,7 +1199,9 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
                 <input
                   aria-label="MCP server name"
                   value={mcpAction.name}
-                  onChange={(event) => setMcpAction({ ...mcpAction, name: event.target.value })}
+                  onChange={(event) =>
+                    setMcpAction({ ...mcpAction, name: event.target.value })
+                  }
                 />
               </label>
               <label>
@@ -1144,7 +1210,9 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
                   aria-label="MCP server configuration"
                   rows={6}
                   value={mcpAction.config}
-                  onChange={(event) => setMcpAction({ ...mcpAction, config: event.target.value })}
+                  onChange={(event) =>
+                    setMcpAction({ ...mcpAction, config: event.target.value })
+                  }
                 />
               </label>
             </>
@@ -1155,7 +1223,9 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
               <input
                 aria-label="Duplicate MCP server name"
                 value={mcpAction.newName}
-                onChange={(event) => setMcpAction({ ...mcpAction, newName: event.target.value })}
+                onChange={(event) =>
+                  setMcpAction({ ...mcpAction, newName: event.target.value })
+                }
               />
             </label>
           )}
@@ -1166,14 +1236,28 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
                 aria-label="MCP copy destination"
                 placeholder="Absolute .json or .toml path"
                 value={mcpAction.destination}
-                onChange={(event) => setMcpAction({ ...mcpAction, destination: event.target.value })}
+                onChange={(event) =>
+                  setMcpAction({
+                    ...mcpAction,
+                    destination: event.target.value,
+                  })
+                }
               />
             </label>
           )}
           <div className="action-dialog-summary">
-            <span><strong>{mcpAction.server?.agent ?? "New"}</strong>Agent</span>
-            <span><strong>{mcpAction.path.endsWith(".toml") ? "TOML" : "JSON"}</strong>Format</span>
-            <span><strong>Automatic</strong>Rollback</span>
+            <span>
+              <strong>{mcpAction.server?.agent ?? "New"}</strong>Agent
+            </span>
+            <span>
+              <strong>
+                {mcpAction.path.endsWith(".toml") ? "TOML" : "JSON"}
+              </strong>
+              Format
+            </span>
+            <span>
+              <strong>Automatic</strong>Rollback
+            </span>
           </div>
           <div className="action-dialog-files">
             <strong>Change preview</strong>
@@ -1189,7 +1273,9 @@ export function McpPage({ selection }: { selection?: SearchHit | null }) {
                       : `- ${mcpAction.name}`}
             </code>
           </div>
-          <p className="notice">Sensitive environment values remain masked in normal previews.</p>
+          <p className="notice">
+            Sensitive environment values remain masked in normal previews.
+          </p>
         </ActionDialog>
       )}
     </section>

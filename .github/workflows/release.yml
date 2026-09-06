@@ -1,7 +1,7 @@
 name: Release
 on:
   push:
-    tags: ['v*.*.*']
+    tags: ["v*.*.*"]
 permissions:
   contents: write
 jobs:
@@ -10,11 +10,11 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            args: ''
+            args: ""
           - os: macos-latest
-            args: ''
+            args: ""
           - os: ubuntu-22.04
-            args: ''
+            args: ""
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -30,11 +30,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: AgentHub ${{ github.ref_name }}
+          releaseName: ContextMeld ${{ github.ref_name }}
           releaseBody: |
-            AgentHub v0.1.1 adds an isolated populated demo, native Claude-to-Codex context handoffs, complete skill-package workflows, and safe MCP JSON/TOML management.
+            ContextMeld ${{ github.ref_name }} introduces the new product name and native automatic indexing for supported Claude Code and OpenAI Codex session folders.
 
-            All history and memories stay local. AgentHub has no account, telemetry, cloud backend, automatic uploads, or automatic script/MCP execution.
+            Changed JSONL session files are processed locally after a short debounce. A manual full index remains available. ContextMeld has no account, telemetry, cloud backend, automatic uploads, or automatic script/MCP execution.
 
             See the README and changelog for verified behavior, platform limits, and installation instructions. Packages are currently unsigned.
           releaseDraft: false

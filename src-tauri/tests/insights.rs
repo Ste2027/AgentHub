@@ -1,4 +1,4 @@
-use agenthub_core::{adapters, database::Database, insights::tool_details};
+use contextmeld_core::{adapters, database::Database, insights::tool_details};
 use std::{io::Cursor, path::Path};
 #[test]
 fn recognizes_only_known_tool_fields() {

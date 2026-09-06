@@ -26,6 +26,8 @@ import {
 import { api, desktop } from "./lib/api";
 import type {
   IndexProgress,
+  AutoIndexStatus,
+  AutoIndexUpdate,
   Memory,
   Overview,
   Page,
@@ -101,6 +103,8 @@ export function App() {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState<IndexProgress | null>(null);
+  const [autoIndexStatus, setAutoIndexStatus] =
+    useState<AutoIndexStatus | null>(null);
   const [agentFilter, setAgentFilter] = useState("");
   const [projectFilter, setProjectFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -116,9 +120,15 @@ export function App() {
   } | null>(null);
   const [contextMemoryIds, setContextMemoryIds] = useState<string[]>([]);
   const [onboarding, setOnboarding] = useState(
-    () => desktop && localStorage.getItem("agenthub.onboarding.v1") !== "done",
+    () =>
+      desktop &&
+      localStorage.getItem("contextmeld.onboarding.v1") !== "done" &&
+      localStorage.getItem("agenthub.onboarding.v1") !== "done",
   );
   const refresh = useCallback(() => setRevision((r) => r + 1), []);
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0 });
+  }, [page, selected]);
   useEffect(() => {
     if (!desktop) return;
     let active = true;
@@ -164,12 +174,12 @@ export function App() {
   ]);
   useEffect(() => {
     if (desktop)
-      api
-        .settings()
-        .then((s) => {
+      Promise.all([api.settings(), api.autoIndexStatus()])
+        .then(([s, watcher]) => {
           document.documentElement.dataset.theme = s.light_mode
             ? "light"
             : "dark";
+          setAutoIndexStatus(watcher);
         })
         .catch((e) => setError(errorMessage(e)));
   }, []);
@@ -183,6 +193,27 @@ export function App() {
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   }, []);
+  useEffect(() => {
+    if (!desktop) return;
+    let disposed = false;
+    let cleanup: (() => void) | undefined;
+    listen<AutoIndexUpdate>("auto-index-status", (event) => {
+      setAutoIndexStatus(event.payload.status);
+      if (event.payload.progress?.done) {
+        setProgress(event.payload.progress);
+        refresh();
+      }
+    })
+      .then((fn) => {
+        if (disposed) fn();
+        else cleanup = fn;
+      })
+      .catch((e) => setError(errorMessage(e)));
+    return () => {
+      disposed = true;
+      cleanup?.();
+    };
+  }, [refresh]);
   useEffect(() => {
     if (!desktop) return;
     let disposed = false;
@@ -285,7 +316,7 @@ export function App() {
           <span>
             <Layers3 size={22} />
           </span>
-          AgentHub<span className="version">α</span>
+          ContextMeld<span className="version">α</span>
         </a>
         <div className="workspace-label">
           <span className="workspace-avatar">L</span>
@@ -321,7 +352,9 @@ export function App() {
         </nav>
         <div className="sidebar-bottom">
           <div className="nav-label">
-            {overview?.demo_mode ? "DEMO INSTALLATIONS" : "INSTALLED ON THIS DEVICE"}
+            {overview?.demo_mode
+              ? "DEMO INSTALLATIONS"
+              : "INSTALLED ON THIS DEVICE"}
           </div>
           {overview ? (
             overview.agents
@@ -336,7 +369,9 @@ export function App() {
                     className={`status-dot ${a.detected ? "online" : ""}`}
                   />
                   {a.name}
-                  <small>{overview.demo_mode ? "Synthetic" : "Installed"}</small>
+                  <small>
+                    {overview.demo_mode ? "Synthetic" : "Installed"}
+                  </small>
                 </button>
               ))
           ) : (
@@ -348,7 +383,7 @@ export function App() {
             <ShieldCheck size={15} />
             <span>Local first. Always yours.</span>
           </div>
-          <span className="build-label">AgentHub / v0.1.1</span>
+          <span className="build-label">ContextMeld / v0.2.0</span>
         </div>
       </aside>
       <main>
@@ -357,9 +392,27 @@ export function App() {
             Workspace <ChevronRight size={13} />{" "}
             <strong>{pages.find((p) => p.id === page)?.label}</strong>
           </span>
-          <span className="private-pill">
-            <span className="status-dot online" /> Private workspace
-          </span>
+          <div className="topbar-statuses">
+            {desktop && autoIndexStatus && (
+              <span
+                className="watch-pill"
+                title={autoIndexStatus.watched_paths.join("\n")}
+              >
+                <RefreshCw
+                  size={13}
+                  className={autoIndexStatus.running ? "spin" : ""}
+                />
+                {autoIndexStatus.running
+                  ? "Updating index"
+                  : autoIndexStatus.active
+                    ? "Auto index on"
+                    : "Auto index off"}
+              </span>
+            )}
+            <span className="private-pill">
+              <span className="status-dot online" /> Private workspace
+            </span>
+          </div>
         </header>
         <div className="content">
           {!desktop && (
@@ -378,7 +431,8 @@ export function App() {
               <span>
                 <strong>Isolated demo workspace</strong> · Every session,
                 project, memory, skill and MCP entry shown here is synthetic.
-                AgentHub will not scan your normal agent folders in this mode.
+                ContextMeld will not scan your normal agent folders in this
+                mode.
               </span>
             </div>
           )}
@@ -508,6 +562,7 @@ export function App() {
                   onSaved={refresh}
                   databasePath={overview?.database_path ?? ""}
                   busy={busy}
+                  autoIndexStatus={autoIndexStatus}
                 />
               )}
               {page === "memories" && (

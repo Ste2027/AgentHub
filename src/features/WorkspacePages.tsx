@@ -447,7 +447,7 @@ export function ProjectsPage({
     <div className="panel">
       <Empty
         title="Projects will find their way here"
-        body="AgentHub discovers project paths from indexed sessions."
+        body="ContextMeld discovers project paths from indexed sessions."
         action="Browse agents"
         onAction={() => navigate("agents")}
       />
@@ -489,8 +489,8 @@ export function AgentsPage({
         <h2>Supported adapters</h2>
         <p className="muted">
           Installation, configuration and session history are checked
-          independently. A leftover folder never counts as an installed app,
-          and no agent is started or contacted.
+          independently. A leftover folder never counts as an installed app, and
+          no agent is started or contacted.
         </p>
         {(
           overview?.agents ?? [
@@ -602,7 +602,7 @@ export function AgentsPage({
       <section className="panel compatibility-panel">
         <h2>Adapter compatibility</h2>
         <p className="muted">
-          Status reflects what AgentHub can parse and verify locally in this
+          Status reflects what ContextMeld can parse and verify locally in this
           release.
         </p>
         <table>
@@ -623,7 +623,9 @@ export function AgentsPage({
               <td>
                 <span className="badge accent">Supported</span>
               </td>
-              <td><span className="badge accent">Full · JSON</span></td>
+              <td>
+                <span className="badge accent">Full · JSON</span>
+              </td>
             </tr>
             <tr>
               <th>OpenAI Codex</th>
@@ -633,7 +635,9 @@ export function AgentsPage({
               <td>
                 <span className="badge accent">Supported</span>
               </td>
-              <td><span className="badge accent">Full · TOML</span></td>
+              <td>
+                <span className="badge accent">Full · TOML</span>
+              </td>
             </tr>
             {[
               ["Cursor", "Planned"],
@@ -661,7 +665,7 @@ export function AgentsPage({
         <h2>Local skills</h2>
         <p className="muted">
           Read-only discovery from each user or project skills directory.
-          AgentHub never edits these files automatically.
+          ContextMeld never edits these files automatically.
         </p>
         {loadError && (
           <p className="error" role="alert">
@@ -725,7 +729,7 @@ export function AgentsPage({
         <h2>MCP servers</h2>
         <p className="muted">
           Configuration discovery only. Commands are displayed for review and
-          never started by AgentHub.
+          never started by ContextMeld.
         </p>
         {mcp.length ? (
           mcp.map((s) => (

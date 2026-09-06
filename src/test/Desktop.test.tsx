@@ -43,7 +43,24 @@ beforeEach(() => {
           database_path: "/synthetic/index.db",
         };
       case "get_settings":
-        return { claude_path: "", codex_path: "", light_mode: false };
+        return {
+          claude_path: "",
+          codex_path: "",
+          light_mode: false,
+          auto_index: true,
+        };
+      case "auto_index_status":
+        return {
+          enabled: true,
+          active: true,
+          running: false,
+          watched_paths: ["/synthetic"],
+          last_run_at: null,
+          last_indexed: 0,
+          last_failed: 0,
+          last_warnings: 0,
+          last_error: "",
+        };
       case "list_sessions":
         return [fixture];
       case "get_session":
@@ -132,13 +149,16 @@ describe("Desktop UI contract", () => {
       { target: { value: "synthetic/project" } },
     );
     fireEvent.click(
-      await screen.findByRole("button", { name: /project.*synthetic\/project/i }),
+      await screen.findByRole("button", {
+        name: /project.*synthetic\/project/i,
+      }),
     );
     expect(
       await screen.findByRole("heading", { name: "Projects" }),
     ).toBeInTheDocument();
-    expect(container.querySelector("[data-project-path].search-target"))
-      .toHaveAttribute("data-project-path", fixture.project);
+    expect(
+      container.querySelector("[data-project-path].search-target"),
+    ).toHaveAttribute("data-project-path", fixture.project);
   });
   it("opens an indexed session and renders transcript markup as inert text", async () => {
     const { container } = render(<App />);
@@ -188,7 +208,21 @@ describe("Desktop UI contract", () => {
         claude_path: "/synthetic/new",
         codex_path: "",
         light_mode: false,
+        auto_index: true,
       },
     });
+  });
+  it("shows that automatic indexing watches the detected session folder", async () => {
+    render(<App />);
+    expect(await screen.findByText("Auto index on")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(
+      await screen.findByText("Watching 1 agent folder"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("checkbox", {
+        name: "Keep the session index up to date automatically",
+      }),
+    ).toBeChecked();
   });
 });

@@ -165,7 +165,7 @@ pub async fn export_skill(path: String) -> Result<String, String> {
         return Err("Skill archive is missing SKILL.md".into());
     }
     serde_json::to_string_pretty(&SkillArchive {
-        format: "agenthub.skill".into(),
+        format: "contextmeld.skill".into(),
         version: 1,
         name: name.into(),
         files,
@@ -180,7 +180,11 @@ pub async fn import_skill_archive(json: String, destination_dir: String) -> Resu
     }
     let archive: SkillArchive =
         serde_json::from_str(&json).map_err(|e| format!("Invalid skill archive: {e}"))?;
-    if archive.format != "agenthub.skill" || archive.version != 1 {
+    if !matches!(
+        archive.format.as_str(),
+        "contextmeld.skill" | "agenthub.skill"
+    ) || archive.version != 1
+    {
         return Err("Unsupported skill archive format/version".into());
     }
     if !simple_name(&archive.name) || archive.files.is_empty() || archive.files.len() > 128 {
@@ -219,7 +223,7 @@ pub async fn import_skill_archive(json: String, destination_dir: String) -> Resu
             if let Some(parent) = target.parent() {
                 std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
             }
-            let tmp = target.with_extension("agenthub-import-tmp");
+            let tmp = target.with_extension("contextmeld-import-tmp");
             std::fs::write(&tmp, file.text.as_bytes()).map_err(|e| e.to_string())?;
             std::fs::rename(&tmp, &target).map_err(|e| e.to_string())?;
             if std::fs::read_to_string(&target).ok().as_deref() != Some(file.text.as_str()) {
@@ -249,7 +253,7 @@ pub async fn save_skill(path: String, text: String, expected: String) -> Result<
         .duration_since(std::time::UNIX_EPOCH)
         .map_err(|e| e.to_string())?
         .as_secs();
-    let backup = p.with_file_name(format!("SKILL.md.agenthub-backup-{stamp}"));
+    let backup = p.with_file_name(format!("SKILL.md.contextmeld-backup-{stamp}"));
     std::fs::copy(&p, &backup).map_err(|e| e.to_string())?;
     crate::exports::replace_text(&p, &text)?;
     if std::fs::read_to_string(&p).ok().as_deref() != Some(text.as_str()) {
@@ -266,11 +270,14 @@ pub async fn restore_skill(path: String, backup: String) -> Result<(), String> {
         || p.file_name().and_then(|v| v.to_str()) != Some("SKILL.md")
         || !crate::paths::is_local_absolute(&b)
         || b.parent() != p.parent()
-        || !b
+        || !matches!(
+            b
             .file_name()
             .and_then(|v| v.to_str())
-            .unwrap_or("")
-            .starts_with("SKILL.md.agenthub-")
+            .unwrap_or(""),
+            name if name.starts_with("SKILL.md.contextmeld-")
+                || name.starts_with("SKILL.md.agenthub-")
+        )
     {
         return Err("Invalid skill backup path".into());
     }
@@ -343,7 +350,7 @@ pub async fn install_skill(
     }
     std::fs::create_dir_all(&folder).map_err(|e| e.to_string())?;
     let target = folder.join("SKILL.md");
-    let tmp = folder.join("SKILL.md.agenthub-install-tmp");
+    let tmp = folder.join("SKILL.md.contextmeld-install-tmp");
     if let Err(e) = std::fs::write(&tmp, text.as_bytes()) {
         let _ = std::fs::remove_dir_all(&folder);
         return Err(e.to_string());
@@ -376,7 +383,7 @@ pub async fn delete_skill(path: String) -> Result<String, String> {
     if !simple_name(name) {
         return Err("Skill folder name is not portable".into());
     }
-    let trash_root = parent.join(".agenthub-trash");
+    let trash_root = parent.join(".contextmeld-trash");
     std::fs::create_dir_all(&trash_root).map_err(|e| e.to_string())?;
     let trash = trash_root.join(format!("{stamp}--{name}"));
     std::fs::rename(source, &trash).map_err(|e| e.to_string())?;
@@ -387,13 +394,15 @@ pub async fn delete_skill(path: String) -> Result<String, String> {
 pub async fn restore_deleted_skill(trash_path: String) -> Result<String, String> {
     let trash = std::path::PathBuf::from(trash_path);
     if !crate::paths::is_local_absolute(&trash)
-        || trash
-            .parent()
-            .and_then(std::path::Path::file_name)
-            .and_then(|v| v.to_str())
-            != Some(".agenthub-trash")
+        || !matches!(
+            trash
+                .parent()
+                .and_then(std::path::Path::file_name)
+                .and_then(|v| v.to_str()),
+            Some(".contextmeld-trash" | ".agenthub-trash")
+        )
     {
-        return Err("Invalid AgentHub skill trash path".into());
+        return Err("Invalid ContextMeld skill trash path".into());
     }
     let stored = trash
         .file_name()
@@ -428,7 +437,7 @@ mod tests {
 
     fn temp_root(label: &str) -> std::path::PathBuf {
         let id = format!(
-            "agenthub-{label}-{}",
+            "contextmeld-{label}-{}",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
@@ -494,7 +503,7 @@ mod tests {
                 .unwrap(),
             "asset"
         );
-        let malicious = r#"{"format":"agenthub.skill","version":1,"name":"bad","files":[{"path":"SKILL.md","text":"ok"},{"path":"../escape.txt","text":"bad"}]}"#;
+        let malicious = r#"{"format":"contextmeld.skill","version":1,"name":"bad","files":[{"path":"SKILL.md","text":"ok"},{"path":"../escape.txt","text":"bad"}]}"#;
         assert!(tauri::async_runtime::block_on(import_skill_archive(
             malicious.into(),
             root.join("archives").to_string_lossy().into_owned(),

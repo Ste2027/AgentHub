@@ -94,8 +94,8 @@ it("exports a versioned JSON package with edits and only explicitly selected mem
   await waitFor(() => expect(mocks.saveText).toHaveBeenCalled());
   const [text, filename] = mocks.saveText.mock.calls[0];
   const result = JSON.parse(text);
-  expect(filename).toBe("agenthub-context.json");
-  expect(result.format).toBe("agenthub.context");
+  expect(filename).toBe("contextmeld-context.json");
+  expect(result.format).toBe("contextmeld.context");
   expect(result.version).toBe(1);
   expect(result.context.task).toBe("Reviewed goal");
   expect(result.target_agent).toBe("OpenAI Codex");

@@ -89,7 +89,7 @@ fn git_output(project: &std::path::Path, args: &[&str]) -> Option<String> {
         .ok()?;
     if text.len() > 256 * 1024 {
         text.truncate(256 * 1024);
-        text.push_str("\n[AgentHub truncated the Git output at 256 KiB.]\n");
+        text.push_str("\n[ContextMeld truncated the Git output at 256 KiB.]\n");
     }
     Some(text)
 }
@@ -387,7 +387,7 @@ mod git_context_tests {
             temp.path(),
             &[
                 "-c",
-                "user.name=AgentHub Test",
+                "user.name=ContextMeld Test",
                 "-c",
                 "user.email=test@invalid",
                 "commit",

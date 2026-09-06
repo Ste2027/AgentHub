@@ -9,6 +9,7 @@ pub struct AppState {
     db: Arc<Mutex<Database>>,
     path: PathBuf,
     pub(crate) demo_root: Option<PathBuf>,
+    watcher: Arc<Mutex<crate::watcher::SessionWatcher>>,
 }
 pub(crate) async fn with_db<T: Send + 'static>(
     state: &AppState,
@@ -48,8 +49,39 @@ async fn get_settings(state: State<'_, AppState>) -> Result<Settings, String> {
     with_db(&state, |db| db.settings()).await
 }
 #[tauri::command]
-async fn save_settings(state: State<'_, AppState>, settings: Settings) -> Result<(), String> {
-    with_db(&state, move |db| db.save_settings(&settings)).await
+async fn save_settings(
+    state: State<'_, AppState>,
+    app: tauri::AppHandle,
+    settings: Settings,
+) -> Result<(), String> {
+    let saved = settings.clone();
+    with_db(&state, move |db| db.save_settings(&settings)).await?;
+    let agents = match &state.demo_root {
+        Some(root) => crate::demo::agents(root),
+        None => crate::adapters::agents(&saved),
+    };
+    state
+        .watcher
+        .lock()
+        .map_err(|_| "File watcher lock failed".to_string())?
+        .configure(
+            state.db.clone(),
+            saved.auto_index,
+            agents,
+            watcher_callback(app),
+        );
+    Ok(())
+}
+#[tauri::command]
+fn auto_index_status(state: State<'_, AppState>) -> AutoIndexStatus {
+    state
+        .watcher
+        .lock()
+        .map(|watcher| watcher.status())
+        .unwrap_or_else(|_| AutoIndexStatus {
+            last_error: "Automatic index status is unavailable".into(),
+            ..AutoIndexStatus::default()
+        })
 }
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
@@ -119,33 +151,55 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .setup(|app| {
             let demo = matches!(
-                std::env::var("AGENTHUB_DEMO").ok().as_deref(),
+                std::env::var("CONTEXTMELD_DEMO")
+                    .or_else(|_| std::env::var("AGENTHUB_DEMO"))
+                    .ok()
+                    .as_deref(),
                 Some("1" | "true" | "yes")
             );
-            let dir = match std::env::var_os("AGENTHUB_DATA_DIR") {
+            let dir = match std::env::var_os("CONTEXTMELD_DATA_DIR")
+                .or_else(|| std::env::var_os("AGENTHUB_DATA_DIR"))
+            {
                 Some(value) => {
                     let path = PathBuf::from(value);
                     if !crate::paths::is_local_absolute(&path) {
                         return Err(std::io::Error::other(
-                            "AGENTHUB_DATA_DIR must be an absolute local path",
+                            "CONTEXTMELD_DATA_DIR must be an absolute local path",
                         )
                         .into());
                     }
                     path
                 }
-                None if demo => std::env::temp_dir().join("agenthub-demo-v0.1.1"),
+                None if demo => std::env::temp_dir().join("contextmeld-demo-v0.2.0"),
                 None => app.path().app_local_data_dir()?,
             };
             std::fs::create_dir_all(&dir)?;
+            // Keep the legacy filename and bundle identifier so v0.1.x users retain
+            // their local index after the product rename.
             let path = dir.join("agenthub.db");
             let mut db = Database::open(&path).map_err(std::io::Error::other)?;
             if demo {
                 crate::demo::prepare(&dir, &mut db).map_err(std::io::Error::other)?;
             }
+            let settings = db.settings().map_err(std::io::Error::other)?;
+            let db = Arc::new(Mutex::new(db));
+            let mut watcher = crate::watcher::SessionWatcher::default();
+            let agents = if demo {
+                crate::demo::agents(&dir)
+            } else {
+                crate::adapters::agents(&settings)
+            };
+            watcher.configure(
+                db.clone(),
+                settings.auto_index,
+                agents,
+                watcher_callback(app.handle().clone()),
+            );
             app.manage(AppState {
-                db: Arc::new(Mutex::new(db)),
+                db,
                 path,
                 demo_root: demo.then_some(dir),
+                watcher: Arc::new(Mutex::new(watcher)),
             });
             Ok(())
         })
@@ -182,6 +236,7 @@ pub fn run() {
             overview,
             get_settings,
             save_settings,
+            auto_index_status,
             list_sessions,
             get_session,
             session_events,
@@ -190,5 +245,11 @@ pub fn run() {
             index_sessions
         ])
         .run(tauri::generate_context!())
-        .expect("Unable to start AgentHub");
+        .expect("Unable to start ContextMeld");
+}
+
+fn watcher_callback(app: tauri::AppHandle) -> crate::watcher::WatchCallback {
+    Arc::new(move |update| {
+        let _ = app.emit("auto-index-status", update);
+    })
 }

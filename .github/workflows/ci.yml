@@ -19,6 +19,6 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml --check
-      - run: cargo test --manifest-path src-tauri/Cargo.toml --locked
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --features desktop --locked --jobs 1
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --features desktop --locked -- -D warnings
       - run: npm run desktop:build -- --debug --no-bundle

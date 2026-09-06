@@ -96,7 +96,10 @@ fn backup_path(path: &Path, qualifier: &str) -> Result<PathBuf, String> {
         .file_name()
         .and_then(|value| value.to_str())
         .ok_or_else(|| "Invalid MCP config path".to_string())?;
-    Ok(path.with_file_name(format!("{name}.agenthub-backup-{qualifier}-{}", stamp()?)))
+    Ok(path.with_file_name(format!(
+        "{name}.contextmeld-backup-{qualifier}-{}",
+        stamp()?
+    )))
 }
 
 fn write_verified(path: &Path, text: &str, format: ConfigFormat) -> Result<String, String> {
@@ -466,7 +469,8 @@ pub async fn restore_mcp_config(path: String, backup: String) -> Result<String, 
         .unwrap_or("");
     if !crate::paths::is_local_absolute(&backup)
         || path.parent() != backup.parent()
-        || !backup_name.starts_with(&format!("{name}.agenthub-backup-"))
+        || (!backup_name.starts_with(&format!("{name}.contextmeld-backup-"))
+            && !backup_name.starts_with(&format!("{name}.agenthub-backup-")))
     {
         return Err("Invalid MCP backup path".into());
     }
@@ -596,7 +600,7 @@ mod tests {
     use super::*;
 
     fn temp_root() -> PathBuf {
-        let root = std::env::temp_dir().join(format!("agenthub-mcp-{}", stamp().unwrap()));
+        let root = std::env::temp_dir().join(format!("contextmeld-mcp-{}", stamp().unwrap()));
         std::fs::create_dir_all(&root).unwrap();
         root
     }

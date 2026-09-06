@@ -116,7 +116,7 @@ export function MemoryLibrary({
     setError("");
     try {
       const json = await api.exportMemories(ids);
-      if (await saveText(json, "agenthub-memories.json"))
+      if (await saveText(json, "contextmeld-memories.json"))
         setNotice("Memory archive exported.");
     } catch (e) {
       setError(errorMessage(e));
@@ -180,8 +180,8 @@ export function MemoryLibrary({
           <h3>How memories work</h3>
           <p>
             Memories are private notes you keep for decisions, conventions and
-            reusable context. They stay in AgentHub and are never injected into
-            an agent automatically.
+            reusable context. They stay in ContextMeld and are never injected
+            into an agent automatically.
           </p>
           <div className="memory-guide-steps">
             <span>

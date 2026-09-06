@@ -1,18 +1,18 @@
-use agenthub_core::mcp::discover;
-use agenthub_core::skills::discover as discover_skills;
+use contextmeld_core::mcp::discover;
+use contextmeld_core::skills::discover as discover_skills;
 use std::{fs, path::PathBuf};
 
 #[test]
 fn discovery_is_empty_for_missing_paths_and_does_not_probe_network() {
-    let missing = PathBuf::from("C:/agenthub-test-project-that-does-not-exist");
+    let missing = PathBuf::from("C:/contextmeld-test-project-that-does-not-exist");
     let servers = discover(&[missing.to_string_lossy().into_owned()]);
     assert!(servers
         .iter()
-        .all(|s| !s.config_path.contains("agenthub-test-project")));
+        .all(|s| !s.config_path.contains("contextmeld-test-project")));
     let skills = discover_skills(&[missing.to_string_lossy().into_owned()]);
     assert!(skills
         .iter()
-        .all(|s| !s.path.contains("agenthub-test-project")));
+        .all(|s| !s.path.contains("contextmeld-test-project")));
 }
 
 #[test]

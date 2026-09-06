@@ -1,4 +1,4 @@
-use agenthub_core::{database::Database, memories::MemoryDraft};
+use contextmeld_core::{database::Database, memories::MemoryDraft};
 use std::path::Path;
 fn db() -> Database {
     Database::open(Path::new(":memory:")).unwrap()
@@ -108,9 +108,9 @@ fn migration_preserves_existing_schema_one_data() {
 fn text_exports_are_atomic_and_validate_destination() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("memory.json");
-    agenthub_core::exports::write_text(&path, "first").unwrap();
-    agenthub_core::exports::write_text(&path, "second").unwrap();
+    contextmeld_core::exports::write_text(&path, "first").unwrap();
+    contextmeld_core::exports::write_text(&path, "second").unwrap();
     assert_eq!(std::fs::read_to_string(path).unwrap(), "second");
-    assert!(agenthub_core::exports::write_text(&dir.path().join("run.exe"), "data").is_err());
-    assert!(agenthub_core::exports::write_text(Path::new("relative.json"), "data").is_err());
+    assert!(contextmeld_core::exports::write_text(&dir.path().join("run.exe"), "data").is_err());
+    assert!(contextmeld_core::exports::write_text(Path::new("relative.json"), "data").is_err());
 }

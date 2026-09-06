@@ -15,15 +15,17 @@ const mocks = vi.hoisted(() => ({
     format: "json" as const,
     secrets_revealed: false,
   })),
-  saveMcpConfig: vi.fn(async () => "/synthetic/config.json.agenthub-backup-1"),
-  restoreMcpConfig: vi.fn(
-    async () => "/synthetic/config.json.agenthub-backup-before-restore-2",
+  saveMcpConfig: vi.fn(
+    async () => "/synthetic/config.json.contextmeld-backup-1",
   ),
-  deleteSkill: vi.fn(async () => "/synthetic/.agenthub-trash/1--target"),
+  restoreMcpConfig: vi.fn(
+    async () => "/synthetic/config.json.contextmeld-backup-before-restore-2",
+  ),
+  deleteSkill: vi.fn(async () => "/synthetic/.contextmeld-trash/1--target"),
   restoreDeletedSkill: vi.fn(async () => "/synthetic/target"),
   exportSkill: vi.fn(async () =>
     JSON.stringify({
-      format: "agenthub.skill",
+      format: "contextmeld.skill",
       version: 1,
       name: "target",
       files: [
@@ -34,7 +36,9 @@ const mocks = vi.hoisted(() => ({
   ),
   copySkill: vi.fn(async () => "/synthetic/claude/skills/target"),
   duplicateSkill: vi.fn(async () => "/synthetic/target-copy"),
-  addMcpServer: vi.fn(async () => "/synthetic/config.json.agenthub-backup-3"),
+  addMcpServer: vi.fn(
+    async () => "/synthetic/config.json.contextmeld-backup-3",
+  ),
 }));
 vi.mock("@/lib/api", () => ({ desktop: true, api: mocks }));
 const hit = {
@@ -112,12 +116,12 @@ it("keeps a verified MCP backup available for an explicit rollback", async () =>
   await waitFor(() =>
     expect(mocks.restoreMcpConfig).toHaveBeenCalledWith(
       "/synthetic/config.json",
-      "/synthetic/config.json.agenthub-backup-1",
+      "/synthetic/config.json.contextmeld-backup-1",
     ),
   );
 });
 
-it("moves a complete skill to AgentHub trash and restores it explicitly", async () => {
+it("moves a complete skill to ContextMeld trash and restores it explicitly", async () => {
   const skill: Skill = {
     name: "target",
     agent: "codex",
@@ -142,7 +146,7 @@ it("moves a complete skill to AgentHub trash and restores it explicitly", async 
   );
   await waitFor(() =>
     expect(mocks.restoreDeletedSkill).toHaveBeenCalledWith(
-      "/synthetic/.agenthub-trash/1--target",
+      "/synthetic/.contextmeld-trash/1--target",
     ),
   );
 });
@@ -161,7 +165,9 @@ it("previews the complete skill package before copying it", async () => {
   mocks.skills.mockResolvedValueOnce([skill]);
   render(<SkillsPage />);
   fireEvent.click(await screen.findByRole("button", { name: "Copy to agent" }));
-  expect(await screen.findByRole("dialog")).toHaveTextContent("scripts/helper.ts");
+  expect(await screen.findByRole("dialog")).toHaveTextContent(
+    "scripts/helper.ts",
+  );
   fireEvent.change(screen.getByLabelText("Skill copy destination"), {
     target: { value: "/synthetic/claude/skills" },
   });

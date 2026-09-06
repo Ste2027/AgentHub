@@ -1,4 +1,4 @@
-# GUI review — v0.1.1
+# GUI review — v0.2.0
 
 ## Verified corrections
 
@@ -11,11 +11,11 @@
 - Skill, Marketplace and MCP mutations use in-app review dialogs with exact paths/files, warnings and sticky actions.
 - Context clipboard copy uses the native Tauri clipboard plugin and was exercised in the real WebView.
 
-Validation after these changes: 29 frontend tests passed; typecheck, ESLint, production frontend build and git diff whitespace check passed.
+The top bar now reports whether automatic indexing is on, active or currently processing changes. Settings explains exactly which folders are watched, exposes the opt-out switch and reports the last automatic result without crowding the rest of the page.
 
 ## Screenshot review
 
-Every image under `docs/screenshots` was captured from the actual Windows Tauri WebView with `AGENTHUB_DEMO=1` and isolated storage at `C:\AgentHubDemoData`. The dataset contains synthetic sessions, projects, memories, skills and MCP configuration only. Captures cover all sidebar pages, session timeline, universal search, skill review/copy, Marketplace install review, Context Export, light mode and the 760×620 minimum-width layout.
+Every current image under `docs/screenshots` is captured from the actual Windows Tauri WebView with `CONTEXTMELD_DEMO=1` and isolated storage. The dataset contains synthetic sessions, projects, memories, skills and MCP configuration only. No normal agent folder or personal path is used for visual review.
 
 ## Results
 

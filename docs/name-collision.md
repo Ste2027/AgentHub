@@ -1,25 +1,9 @@
-# AgentHub name collision review
+# Product name decision
 
-Reviewed 2026-09-05. The name **AgentHub** has significant collision risk in the same software category, so it should be reconsidered before wider promotion or paid distribution. This release keeps the existing repository and product name to avoid an unapproved breaking rename.
+Reviewed 2026-09-06. **ContextMeld** replaces **AgentHub** starting with v0.2.0.
 
-## Direct collisions
+AgentHub was rejected because several active products and repositories already use that name for almost the same category, including [agenthub-app.com](https://www.agenthub-app.com/), [jamesrochabrun/AgentHub](https://github.com/jamesrochabrun/AgentHub), [Stanshy/AgentHub](https://github.com/Stanshy/AgentHub) and [metrogg/AgentHub](https://github.com/metrogg/AgentHub). That made the project difficult to distinguish in search and introduced avoidable brand risk.
 
-- [agenthub-app.com](https://www.agenthub-app.com/) markets a cross-platform desktop app for launching and managing Claude Code, Codex, Gemini CLI and OpenCode sessions.
-- [jamesrochabrun/AgentHub](https://github.com/jamesrochabrun/AgentHub) describes a desktop product for Claude Code and Codex sessions, worktrees and diffs.
-- [Stanshy/AgentHub](https://github.com/Stanshy/AgentHub) is an Electron application for managing AI-agent workflows with skills and hooks.
-- [metrogg/AgentHub](https://github.com/metrogg/AgentHub) is a local-first coding-agent workbench.
-- [AgentHub Inc.](https://www.ic.gc.ca/opic-cipo/tmj/eng/08Apr2026_en.pdf?edition=04-08&year=2026) appears in a Canadian trademarks journal for AI-enabled workflow and integration software.
+ContextMeld describes the product's central action: bringing useful context from different coding agents into one reviewable local workspace. An exact GitHub repository-name search returned no conflicting project when reviewed. Broader searches found a [generated startup-opportunity page](https://monetscope.com/opportunities/contextmeld-context-aware-customer-support-ai-orchestrator) using the phrase for a different customer-support concept, but no operating product in this desktop coding-agent category. The `.com` domain is already registered, so the project does not claim domain availability.
 
-These findings do not establish infringement or ownership in every jurisdiction. They do show that the current name is hard to distinguish in search and overlaps closely with this product's audience and features. A formal trademark search and legal review would be required before commercial use.
-
-## Candidate names for a future decision
-
-The following are working candidates only; each still needs repository, domain and trademark clearance:
-
-1. **ContextPort** — emphasizes moving reviewed context between tools.
-2. **AgentLedger** — emphasizes a durable local history of agent work.
-3. **LocalRelay** — emphasizes local-first handoff without implying execution.
-4. **CodeContext Vault** — emphasizes private stored sessions and memories.
-5. **SessionHarbor** — emphasizes bringing scattered coding sessions together.
-
-No automatic rename was made. Existing links and the `v0.1.x` application identifier remain stable until the maintainer chooses a new identity.
+This review is a practical naming check, not a trademark opinion. Formal clearance is still required before paid commercial use. The v0.1.x Tauri identifier, database filename and legacy import markers remain supported so existing local data survives the rename.

@@ -101,7 +101,7 @@ fn prepare_demo_repository(project: &Path) -> Result<(), String> {
                 project,
                 &[
                     "-c",
-                    "user.name=AgentHub Demo",
+                    "user.name=ContextMeld Demo",
                     "-c",
                     "user.email=demo@invalid",
                     "-c",
@@ -294,6 +294,7 @@ pub fn prepare(root: &Path, db: &mut Database) -> Result<IndexProgress, String> 
         claude_path: sources.join("claude").to_string_lossy().into_owned(),
         codex_path: sources.join("codex").to_string_lossy().into_owned(),
         light_mode: false,
+        auto_index: true,
     })?;
     let progress = crate::indexer::run_with_agents(db, true, agents(root), |_| {})?;
     if db.memories("", "", false, 0)?.total == 0 {

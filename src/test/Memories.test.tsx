@@ -32,7 +32,7 @@ beforeEach(() => {
   mocks.memory.mockResolvedValue(item);
   mocks.saveMemory.mockResolvedValue({ ...item, revision: 2 });
   mocks.trashMemory.mockResolvedValue(undefined);
-  mocks.exportMemories.mockResolvedValue('{"format":"agenthub.memories"}');
+  mocks.exportMemories.mockResolvedValue('{"format":"contextmeld.memories"}');
   mocks.saveText.mockResolvedValue(true);
 });
 describe("Memory library", () => {
@@ -88,8 +88,8 @@ describe("Memory library", () => {
       expect(mocks.exportMemories).toHaveBeenCalledWith(["memory-1"]),
     );
     expect(mocks.saveText).toHaveBeenCalledWith(
-      '{"format":"agenthub.memories"}',
-      "agenthub-memories.json",
+      '{"format":"contextmeld.memories"}',
+      "contextmeld-memories.json",
     );
   });
   it("stages a memory for context only after the explicit action", async () => {

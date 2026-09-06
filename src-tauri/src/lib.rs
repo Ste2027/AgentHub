@@ -17,3 +17,5 @@ pub mod paths;
 #[cfg(feature = "desktop")]
 pub mod skill_commands;
 pub mod skills;
+#[cfg(feature = "desktop")]
+pub mod watcher;

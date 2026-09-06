@@ -1,22 +1,25 @@
 import { useEffect, useState } from "react";
 import { ShieldCheck, Save } from "lucide-react";
 import { api, desktop } from "@/lib/api";
-import type { Settings as Preferences } from "@/lib/types";
+import type { AutoIndexStatus, Settings as Preferences } from "@/lib/types";
 import { errorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 export function Settings({
   onSaved,
   databasePath,
   busy,
+  autoIndexStatus,
 }: {
   onSaved: () => void;
   databasePath: string;
   busy: boolean;
+  autoIndexStatus: AutoIndexStatus | null;
 }) {
   const [settings, setSettings] = useState<Preferences>({
     claude_path: "",
     codex_path: "",
     light_mode: false,
+    auto_index: true,
   });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -42,7 +45,11 @@ export function Settings({
       document.documentElement.dataset.theme = settings.light_mode
         ? "light"
         : "dark";
-      setMessage("Settings saved. Index sessions to import from these paths.");
+      setMessage(
+        settings.auto_index
+          ? "Settings saved. New and changed sessions will be indexed automatically."
+          : "Settings saved. Automatic indexing is off.",
+      );
       onSaved();
     } catch (e) {
       setError(errorMessage(e));
@@ -86,6 +93,40 @@ export function Settings({
           />{" "}
           Use light appearance
         </label>
+        <label className="checkbox">
+          <input
+            type="checkbox"
+            checked={settings.auto_index}
+            onChange={(e) =>
+              setSettings({ ...settings, auto_index: e.target.checked })
+            }
+          />{" "}
+          Keep the session index up to date automatically
+        </label>
+        <div className="watcher-status" role="status">
+          <span
+            className={`status-dot ${autoIndexStatus?.active ? "online" : ""}`}
+          />
+          <span>
+            <strong>
+              {autoIndexStatus?.running
+                ? "Indexing changed sessions…"
+                : autoIndexStatus?.active
+                  ? `Watching ${autoIndexStatus.watched_paths.length} agent ${autoIndexStatus.watched_paths.length === 1 ? "folder" : "folders"}`
+                  : autoIndexStatus?.enabled
+                    ? "Waiting for a supported session folder"
+                    : "Automatic indexing is off"}
+            </strong>
+            <small>
+              {autoIndexStatus?.last_run_at
+                ? `Last update ${new Date(autoIndexStatus.last_run_at).toLocaleString()} · ${autoIndexStatus.last_indexed} changed · ${autoIndexStatus.last_failed} failed`
+                : "Run Index sessions once for existing history; later file changes are detected automatically."}
+            </small>
+          </span>
+        </div>
+        {autoIndexStatus?.last_error && (
+          <p className="watcher-warning">{autoIndexStatus.last_error}</p>
+        )}
         {error && (
           <p role="alert" className="error">
             {error}
@@ -105,14 +146,15 @@ export function Settings({
         <ShieldCheck size={26} />
         <h2>Your data stays yours.</h2>
         <p>
-          AgentHub reads local transcripts and keeps a searchable SQLite index
-          on this device. No accounts, telemetry or AI service calls.
-          Marketplace contacts public GitHub repositories only when you request it.
+          ContextMeld reads local transcripts and keeps a searchable SQLite
+          index on this device. No accounts, telemetry or AI service calls.
+          Marketplace contacts public GitHub repositories only when you request
+          it.
         </p>
         <p>
           Original transcripts are never modified. Skill and MCP changes require
-          your explicit action. Tool commands in transcripts are displayed as text
-          and never executed.
+          your explicit action. Tool commands in transcripts are displayed as
+          text and never executed.
         </p>
         <h3>Local storage</h3>
         <code>{databasePath || "Available in the desktop app"}</code>
@@ -122,9 +164,10 @@ export function Settings({
           disk encryption.
         </p>
         <p>
-          Indexing is manual. Deleted source files remain searchable in the
-          local archive. To reset the index, close AgentHub and delete its
-          database and adjacent -wal/-shm files.
+          Automatic indexing watches only supported local session directories
+          and can be disabled above. Deleted source files remain searchable in
+          the local archive. To reset the index, close ContextMeld and delete
+          its database and adjacent -wal/-shm files.
         </p>
       </aside>
     </div>

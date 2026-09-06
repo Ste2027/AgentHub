@@ -13,9 +13,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { ActionDialog } from "@/components/ActionDialog";
 
-const SOURCE_KEY = "agenthub.marketplace.sources";
-const INSTALL_KEY = "agenthub.marketplace.installs.v1";
-const DEMO_SOURCE = "https://github.com/agenthub-demo/skill-catalog";
+const SOURCE_KEY = "contextmeld.marketplace.sources";
+const INSTALL_KEY = "contextmeld.marketplace.installs.v1";
+const LEGACY_SOURCE_KEY = "agenthub.marketplace.sources";
+const LEGACY_INSTALL_KEY = "agenthub.marketplace.installs.v1";
+const DEMO_SOURCE = "https://github.com/contextmeld-demo/skill-catalog";
 const DEMO_ITEMS: CatalogItem[] = [
   "context-bridge",
   "release-proof",
@@ -23,7 +25,7 @@ const DEMO_ITEMS: CatalogItem[] = [
 ].map((name, index) => ({
   name,
   url: `${DEMO_SOURCE}/tree/main/${name}`,
-  apiUrl: `agenthub:demo/${name}`,
+  apiUrl: `contextmeld:demo/${name}`,
   sha: `${index + 1}`.repeat(40),
   sourceRoot: DEMO_SOURCE,
 }));
@@ -43,7 +45,7 @@ function demoInspection(item: CatalogItem): InspectedSkill {
     },
     {
       path: "scripts/format-context.ts",
-      text: "// Optional helper. AgentHub does not execute this file.\n",
+      text: "// Optional helper. ContextMeld does not execute this file.\n",
       size: 56,
     },
     {
@@ -66,7 +68,7 @@ function demoInspection(item: CatalogItem): InspectedSkill {
     scripts: ["scripts/format-context.ts"],
     mcpFiles: ["examples/mcp.example.json"],
     archive: JSON.stringify({
-      format: "agenthub.skill",
+      format: "contextmeld.skill",
       version: 1,
       name: item.name,
       files: files.map(({ path, text }) => ({ path, text })),
@@ -82,6 +84,11 @@ function stored<T>(key: string): T[] {
   }
 }
 
+function storedWithLegacy<T>(key: string, legacyKey: string): T[] {
+  const current = stored<T>(key);
+  return current.length ? current : stored<T>(legacyKey);
+}
+
 export function MarketplacePage({
   demoMode = false,
   demoDestination = "",
@@ -90,18 +97,18 @@ export function MarketplacePage({
   demoDestination?: string;
 }) {
   const [source, setSource] = useState(demoMode ? DEMO_SOURCE : "");
-  const [sources, setSources] = useState<string[]>(() => stored(SOURCE_KEY));
+  const [sources, setSources] = useState<string[]>(() =>
+    storedWithLegacy(SOURCE_KEY, LEGACY_SOURCE_KEY),
+  );
   const [installs, setInstalls] = useState<MarketplaceInstall[]>(() =>
-    stored(INSTALL_KEY),
+    storedWithLegacy(INSTALL_KEY, LEGACY_INSTALL_KEY),
   );
   const [view, setView] = useState<
     "browse" | "installed" | "updates" | "sources"
   >("browse");
   const [query, setQuery] = useState("");
   const [installedSkills, setInstalledSkills] = useState<Skill[]>([]);
-  const [items, setItems] = useState<CatalogItem[]>(
-    demoMode ? DEMO_ITEMS : [],
-  );
+  const [items, setItems] = useState<CatalogItem[]>(demoMode ? DEMO_ITEMS : []);
   const [selected, setSelected] = useState<InspectedSkill | null>(null);
   const [targetAgent, setTargetAgent] = useState("codex");
   const [destination, setDestination] = useState(demoDestination);
@@ -155,7 +162,7 @@ export function MarketplacePage({
     setNotice("");
     try {
       setSelected(
-        demoMode && item.apiUrl.startsWith("agenthub:demo/")
+        demoMode && item.apiUrl.startsWith("contextmeld:demo/")
           ? demoInspection(item)
           : await inspectMarketplaceSkill(item),
       );
@@ -234,9 +241,9 @@ export function MarketplacePage({
       </span>
       <h2>Skills marketplace</h2>
       <p>
-        Browse public GitHub repositories only when you ask. AgentHub downloads
-        text for review, never executes package scripts, and writes only after
-        an explicit preview and confirmation.
+        Browse public GitHub repositories only when you ask. ContextMeld
+        downloads text for review, never executes package scripts, and writes
+        only after an explicit preview and confirmation.
       </p>
       {demoMode && (
         <p className="notice">
@@ -542,9 +549,15 @@ export function MarketplacePage({
           onConfirm={() => void install()}
         >
           <div className="action-dialog-summary">
-            <span><strong>{targetAgent}</strong>Target agent</span>
-            <span><strong>{selected.files.length}</strong>Files</span>
-            <span><strong>{selected.scripts.length}</strong>Scripts, not run</span>
+            <span>
+              <strong>{targetAgent}</strong>Target agent
+            </span>
+            <span>
+              <strong>{selected.files.length}</strong>Files
+            </span>
+            <span>
+              <strong>{selected.scripts.length}</strong>Scripts, not run
+            </span>
           </div>
           <label>
             Exact destination
@@ -552,15 +565,19 @@ export function MarketplacePage({
           </label>
           <div className="action-dialog-files">
             <strong>Exact write set</strong>
-            {selected.files.map((file) => <code key={file.path}>{file.path}</code>)}
+            {selected.files.map((file) => (
+              <code key={file.path}>{file.path}</code>
+            ))}
           </div>
           <p className={conflict ? "warning" : "notice"}>
             {conflict
-              ? "Conflict detected: an installed skill uses this name. AgentHub will refuse to overwrite it."
+              ? "Conflict detected: an installed skill uses this name. ContextMeld will refuse to overwrite it."
               : "No name conflict was found among discovered skills."}
           </p>
           {selected.warnings.map((warning) => (
-            <p className="warning" key={warning}>{warning}</p>
+            <p className="warning" key={warning}>
+              {warning}
+            </p>
           ))}
         </ActionDialog>
       )}

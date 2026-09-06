@@ -1,22 +1,22 @@
 [package]
-name = "agenthub"
-version = "0.1.1"
+name = "contextmeld"
+version = "0.2.0"
 description = "The local control center for your AI coding agents"
 edition = "2021"
 license = "MIT"
 rust-version = "1.94"
 
 [lib]
-name = "agenthub_core"
+name = "contextmeld_core"
 
 [[bin]]
-name = "agenthub"
+name = "contextmeld"
 path = "src/main.rs"
 required-features = ["desktop"]
 
 [features]
 default = []
-desktop = ["dep:tauri", "dep:tauri-build", "dep:tauri-plugin-dialog", "dep:tauri-plugin-clipboard-manager"]
+desktop = ["dep:tauri", "dep:tauri-build", "dep:tauri-plugin-dialog", "dep:tauri-plugin-clipboard-manager", "dep:notify"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
@@ -29,6 +29,7 @@ sha2 = "0.10"
 dirs = "6"
 uuid = { version = "1", features = ["v4"] }
 tempfile = "3"
+notify = { version = "8.2", optional = true }
 tauri-plugin-dialog = { version = "2", optional = true }
 tauri-plugin-clipboard-manager = { version = "2", optional = true }
 tauri = { version = "2", optional = true , features = [] }

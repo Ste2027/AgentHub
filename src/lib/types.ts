@@ -35,6 +35,7 @@ export interface Settings {
   claude_path: string;
   codex_path: string;
   light_mode: boolean;
+  auto_index: boolean;
 }
 export interface Project {
   path: string;
@@ -78,6 +79,21 @@ export interface IndexProgress {
   warnings: number;
   done: boolean;
   issues: string[];
+}
+export interface AutoIndexStatus {
+  enabled: boolean;
+  active: boolean;
+  running: boolean;
+  watched_paths: string[];
+  last_run_at: number | null;
+  last_indexed: number;
+  last_failed: number;
+  last_warnings: number;
+  last_error: string;
+}
+export interface AutoIndexUpdate {
+  status: AutoIndexStatus;
+  progress: IndexProgress | null;
 }
 export type Page =
   | "overview"

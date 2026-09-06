@@ -41,11 +41,23 @@ pub struct Agent {
     pub config_path: String,
     pub path: String,
 }
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Settings {
     pub claude_path: String,
     pub codex_path: String,
     pub light_mode: bool,
+    pub auto_index: bool,
+}
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            claude_path: String::new(),
+            codex_path: String::new(),
+            light_mode: false,
+            auto_index: true,
+        }
+    }
 }
 #[derive(Debug, Serialize)]
 pub struct Project {
@@ -84,6 +96,23 @@ pub struct IndexProgress {
     pub warnings: usize,
     pub done: bool,
     pub issues: Vec<String>,
+}
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct AutoIndexStatus {
+    pub enabled: bool,
+    pub active: bool,
+    pub running: bool,
+    pub watched_paths: Vec<String>,
+    pub last_run_at: Option<u64>,
+    pub last_indexed: usize,
+    pub last_failed: usize,
+    pub last_warnings: usize,
+    pub last_error: String,
+}
+#[derive(Debug, Clone, Serialize)]
+pub struct AutoIndexUpdate {
+    pub status: AutoIndexStatus,
+    pub progress: Option<IndexProgress>,
 }
 #[derive(Debug, Serialize)]
 pub struct Overview {

@@ -1,4 +1,4 @@
-use agenthub_core::{
+use contextmeld_core::{
     database::Database,
     models::{Event, Session},
 };
