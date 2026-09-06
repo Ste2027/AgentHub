@@ -61,4 +61,12 @@ All Markdown relative links resolve. Generated screenshots display only `C:\Agen
 
 ## CI and release artifacts
 
-The release tag workflow builds Windows, macOS and Linux packages through `tauri-apps/tauri-action`. Windows is run-tested locally. macOS and Linux bundles are build-verified by GitHub Actions and are not run-tested on this Windows host. Public workflow and asset results are recorded after tag publication.
+The tagged commit passed the public [Quality run](https://github.com/Ste2027/AgentHub/actions/runs/34020397968). The subsequent [Release run](https://github.com/Ste2027/AgentHub/actions/runs/34020745397) completed successfully on Windows, macOS and Ubuntu and published [AgentHub v0.1.1](https://github.com/Ste2027/AgentHub/releases/tag/v0.1.1) as a non-draft, non-prerelease release.
+
+The seven release assets were checked through their public download URLs and returned HTTP 200:
+
+- Windows x64: NSIS setup and MSI.
+- macOS Apple Silicon: DMG and application tarball.
+- Linux x86_64: AppImage, DEB and RPM.
+
+Windows is run-tested locally. macOS and Linux bundles are build-verified by GitHub Actions and are not run-tested on this Windows host.
