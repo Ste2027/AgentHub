@@ -34,17 +34,47 @@ Repository and downloads: https://github.com/Ste2027/ContextMeld
 
 I would especially value feedback on detection across different machines, the usefulness of the context handoff, and any local format variants the current adapters miss. Please do not attach real transcripts to issues; minimized synthetic records are enough.
 
-## Reddit draft
+## Reddit: r/codex
 
-**Title:** I built a local desktop workspace for Claude Code and Codex history
+**Title:** I built a local-first desktop workspace for Codex and Claude Code session history
 
-I kept losing useful work between Claude Code and Codex, so I built ContextMeld. It indexes supported local session files into SQLite and gives you one session timeline, local search, project view, reusable memories and an editable context package you can copy between agents.
+I built ContextMeld because useful decisions kept disappearing into separate Codex and Claude Code histories.
 
-The app also discovers skills and MCP configuration. Every write is explicit and reviewable; remote marketplace scripts are listed but never run. There is no login, telemetry or cloud backend.
+ContextMeld indexes supported local JSONL session files into SQLite and provides:
 
-The repo includes an isolated synthetic demo and unsigned installers for Windows, macOS and Linux: https://github.com/Ste2027/ContextMeld
+- unified Codex and Claude Code timelines;
+- local full-text search across sessions and projects;
+- reusable memories selected explicitly for context export;
+- inspection of local skills and MCP configuration;
+- editable Codex-to-Claude or Claude-to-Codex handoff packages;
+- native file watching so changed sessions are indexed automatically.
 
-I am looking for feedback from people who regularly switch between Claude Code and Codex: which part of the session context is hardest for you to recover today?
+It does not require an account, telemetry or a cloud backend. Source transcripts are opened read-only, recorded commands remain inert text, and downloaded marketplace scripts are never executed. The repository also includes an isolated synthetic demo that does not scan normal agent folders.
+
+The current release has verified session adapters for Codex and Claude Code. Cursor, Gemini CLI, OpenCode and GitHub Copilot currently have installation and configuration detection only.
+
+Repository and unsigned installers for Windows, macOS and Linux:
+https://github.com/Ste2027/ContextMeld
+
+I would value specific feedback on two things: whether Codex detection is accurate on another machine, and whether search or context export makes an older piece of work easier to recover. Please do not attach real transcripts to issues; minimized synthetic records are sufficient.
+
+**Flair:** Showcase
+
+## Reddit: r/coolgithubprojects
+
+**Post type:** Link
+
+**Title:** [Local desktop workspace for Claude Code and Codex history] - ContextMeld
+
+**URL:** https://github.com/Ste2027/ContextMeld
+
+## Reddit: r/github self-promotion megathread
+
+I built ContextMeld, an MIT-licensed local desktop workspace for Claude Code and OpenAI Codex history. It provides unified timelines, local full-text search, project views, reusable memories, skills and MCP inspection, and editable cross-agent context handoffs. It has no account, telemetry or cloud backend, and includes installers for Windows, macOS and Linux.
+
+Repository: https://github.com/Ste2027/ContextMeld
+
+I am looking for feedback on installation, agent detection and the safety documentation.
 
 ## Product Hunt
 

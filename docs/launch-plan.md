@@ -40,9 +40,17 @@ Do not ask friends to upvote or coordinate comments. Hacker News explicitly disa
 
 ### 3. Relevant Reddit communities
 
-Post only in communities whose current rules allow project sharing. Rewrite the opening sentence for each community and disclose that you built the project. Good candidates to check at posting time are communities about open source, self-hosted/local-first software, Claude Code and Codex.
+Post only in communities whose current rules allow project sharing. Rewrite the opening sentence for each community and disclose that you built the project.
 
-Use one screenshot or the tour GIF, then ask for a specific kind of feedback. Avoid posting the same text to several communities on the same day.
+The current best matches are:
+
+- `r/codex`, using the `Showcase` flair and the detailed technical post in `docs/launch-kit.md`;
+- `r/coolgithubprojects`, using its requested `[Description] - [Title]` link-post format;
+- the recurring `r/github` self-promotion megathread, as a lower-priority follow-up.
+
+Do not post to a community merely because it has a large audience. At the time of this plan, `r/opensource` has strict low-effort and self-promotion rules, `r/ClaudeAI` requires more than 100 subreddit karma for feed posts, and `r/selfhosted` directs projects under three months old to its current New Project Megathread. Recheck rules immediately before any later post because moderators can change them.
+
+Use the repository social preview or tour GIF, then ask for a specific kind of feedback. Avoid placing the same text in several communities on the same day.
 
 ### 4. Product Hunt
 
